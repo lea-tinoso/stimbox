@@ -22,7 +22,8 @@ import { NowPlayingWindow } from '../components/NowPlayingWindow.tsx'
 import { SpotifyEmbedHost } from '../components/SpotifyEmbedHost.tsx'
 import { Signature } from '../components/Signature.tsx'
 import { Wallpaper } from '../components/Wallpaper.tsx'
-import { useCompact } from '../lib/useMedia.ts'
+import { useCompact, usePhone } from '../lib/useMedia.ts'
+import { PhoneIPod } from '../components/PhoneIPod.tsx'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 
@@ -54,7 +55,16 @@ function useShortcuts() {
 export default function Desktop() {
   const [query, setQuery] = useState('')
   const compact = useCompact()
+  const phone = usePhone()
   useShortcuts()
+
+  if (phone)
+    return (
+      <>
+        <PhoneIPod />
+        <SpotifyEmbedHost />
+      </>
+    )
 
   return (
     <div className="relative h-full overflow-hidden bg-desk">

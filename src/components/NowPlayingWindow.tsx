@@ -3,6 +3,7 @@ import { currentLine, fmt, getTrack } from '../data/fake.ts'
 import { useLyrics } from '../lib/lyrics.ts'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
+import { AddToPlaylist } from './AddToPlaylist.tsx'
 import { Art } from './Art.tsx'
 import { Pill, Segmented } from './Pill.tsx'
 import { Reactions } from './Reactions.tsx'
@@ -73,7 +74,7 @@ export function NowPlayingWindow() {
               : 'demo song · chiptune stand-in'}
           </p>
         )}
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Pill
             pressed={p.shuffle}
             onClick={() => p.setShuffle(!p.shuffle)}
@@ -125,9 +126,10 @@ export function NowPlayingWindow() {
           >
             <span aria-hidden>{p.muted ? '🔇' : '🔊'}</span>
           </Pill>
-          <div className="ml-auto">
-            <Reactions variant="aqua" />
-          </div>
+        </div>
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          <Reactions variant="aqua" />
+          <AddToPlaylist id={p.track.id} pill />
         </div>
       </div>
 

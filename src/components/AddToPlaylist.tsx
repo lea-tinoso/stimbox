@@ -8,7 +8,14 @@ import { usePlaylists } from '../state/playlists.tsx'
 
 // "+" on a song row: a small Aqua menu of your playlists, plus "new playlist…".
 // The menu is fixed to the viewport so window bodies that scroll don't clip it.
-export function AddToPlaylist({ id }: { id: string }) {
+export function AddToPlaylist({
+  id,
+  pill = false,
+}: {
+  id: string
+  // A bigger Aqua pill with a playlist icon, for the now playing window.
+  pill?: boolean
+}) {
   const { playlists, addTrack, setPendingTrack } = usePlaylists()
   const { show } = useDesktop()
   const [at, setAt] = useState<{ x: number; y: number } | null>(null)
@@ -81,9 +88,31 @@ export function AddToPlaylist({ id }: { id: string }) {
         aria-label={`add ${title} to a playlist`}
         aria-haspopup="menu"
         aria-expanded={!!at}
-        className="grid size-6 place-items-center rounded-full text-[15px] text-mute hover:text-aqua-deep"
+        title={pill ? 'add to playlist' : undefined}
+        className={
+          pill
+            ? 'aqua-pill flex items-center gap-1 rounded-pill border border-hairline px-3 py-1 text-[12px] text-ink hover:brightness-95'
+            : 'grid size-6 place-items-center rounded-full text-[15px] text-mute hover:text-aqua-deep'
+        }
       >
-        +
+        {pill ? (
+          <>
+            <svg
+              aria-hidden
+              viewBox="0 0 16 16"
+              className="size-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            >
+              <path d="M2 4h9M2 8h9M2 12h5M12.5 9.5v5M10 12h5" />
+            </svg>
+            <span>add</span>
+          </>
+        ) : (
+          '+'
+        )}
       </button>
       {failed && (
         <span role="status" className="text-[10px] text-red">
