@@ -11,6 +11,7 @@ const SPECS: [string, string][] = [
   ['graphics', 'Tailwind CSS 4.3 · Aqua tokens'],
   ['build tool', 'Vite 8'],
   ['music', 'Spotify Web API · embed player · Last.fm API'],
+  ['lyrics', 'LRCLIB'],
   ['startup disk', 'Vercel'],
   ['built with', 'lea + Claude Code, 3 hyperfixations ago'],
 ]
