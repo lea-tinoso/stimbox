@@ -10,7 +10,8 @@ const SPECS: [string, string][] = [
   ['processor', 'React 19.3 · TypeScript 6'],
   ['graphics', 'Tailwind CSS 4.3 · Aqua tokens'],
   ['build tool', 'Vite 8'],
-  ['music', 'Spotify Web API · Playback SDK'],
+  ['music', 'Spotify Web API · embed player · Last.fm API'],
+  ['lyrics', 'LRCLIB'],
   ['startup disk', 'Vercel'],
   ['built with', 'lea + Claude Code, 3 hyperfixations ago'],
 ]
@@ -51,17 +52,7 @@ export function AboutWindow() {
           </div>
         ))}
       </dl>
-      <div className="mt-3 mb-2 text-center">
-        <a
-          href="https://github.com/lea-tinoso/stimbox#readme"
-          target="_blank"
-          rel="noreferrer"
-          className="aqua-pill inline-block rounded-pill border border-hairline px-3 py-0.5 text-[11px] text-ink"
-        >
-          more info…
-        </a>
-      </div>
-      <p className="text-center text-[9px] text-mute">
+      <p className="mt-3 text-center text-[9px] text-mute">
         ™ &amp; © 2026 lea. made with too many replays.
       </p>
     </Window>

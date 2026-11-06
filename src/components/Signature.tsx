@@ -29,8 +29,8 @@ export function Signature() {
           </p>
         </div>
         <p className="mt-1.5 font-hand text-[19px] leading-[1.1] text-body">
-          software engineer who loops one song until her ai agents ship the
-          feature. currently on play 48 ♪
+          not the biggest fan of youtube music’s ui, so i built this instead of
+          touching grass
         </p>
         <p className="mt-2 text-[11px] text-mute">
           <button
@@ -40,15 +40,6 @@ export function Signature() {
           >
             nerdstats
           </button>
-          <span aria-hidden> · </span>
-          <a
-            href="https://lea-showcase.vercel.app"
-            target="_blank"
-            rel="noreferrer"
-            className="text-aqua-deep underline hover:text-selection"
-          >
-            portfolio ↗
-          </a>
         </p>
       </div>
     </aside>
