@@ -11,10 +11,23 @@ export function Art({
   round?: boolean
   className?: string
 }) {
+  const shape = `block shrink-0 border border-ink/25 ${round ? 'rounded-full' : 'rounded-art'} ${className}`
+  if (art.startsWith('https://'))
+    return (
+      <img
+        src={art}
+        alt=""
+        width={size}
+        height={size}
+        loading="lazy"
+        className={`${shape} bg-chrome-lo object-cover`}
+        style={{ width: size, height: size }}
+      />
+    )
   return (
     <span
       aria-hidden
-      className={`${art} block shrink-0 border border-ink/25 ${round ? 'rounded-full' : 'rounded-art'} ${className}`}
+      className={`${art} ${shape}`}
       style={{ width: size, height: size }}
     />
   )

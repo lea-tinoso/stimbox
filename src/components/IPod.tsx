@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { currentLine, fmt, lyricsFor } from '../data/fake.ts'
+import { currentLine, fmt } from '../data/fake.ts'
+import { useLyrics } from '../lib/lyrics.ts'
 import { useDrag } from '../lib/useDrag.ts'
 import { useCompact } from '../lib/useMedia.ts'
 import { useDesktop } from '../state/desktop.tsx'
@@ -15,10 +15,10 @@ export function IPod() {
   const drag = useDrag('ipod')
   const compact = useCompact()
   const zoom = compact ? () => show('nowplaying') : toBigPlayer
-  const lines = useMemo(() => lyricsFor(p.track), [p.track])
+  const { lines } = useLyrics(p.track)
   const cur = currentLine(lines, p.position)
   const showingLyrics = open.has('nowplaying')
-  const pct = (p.position / p.track.duration) * 100
+  const pct = (p.position / p.length) * 100
   if (!compact && !open.has('ipod')) return null
 
   return (
@@ -77,7 +77,7 @@ export function IPod() {
         </span>
         <span className="flex justify-between px-2 text-[10px] tabular-nums">
           <span>{fmt(p.position)}</span>
-          <span>-{fmt(p.track.duration - p.position)}</span>
+          <span>-{fmt(p.length - p.position)}</span>
         </span>
       </button>
       <div className="mt-1 w-[206px]">

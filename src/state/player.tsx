@@ -8,8 +8,10 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { getTrack, type Track } from '../data/fake.ts'
+import { demoIds, getTrack, type Track } from '../data/fake.ts'
 import { chiptune } from '../lib/chiptune.ts'
+import { spotifyEmbed } from '../lib/spotifyEmbed.ts'
+import { useCatalog } from './catalog.tsx'
 import { load, save } from '../lib/storage.ts'
 
 // Fake playback: a clock that advances while "playing". Swapped for the Spotify Web Playback SDK later.
@@ -24,6 +26,10 @@ type PlayerApi = {
   position: number
   shuffle: boolean
   muted: boolean
+  // Spotify only gave a 30-second preview (the visitor isn't logged into Spotify).
+  preview: boolean
+  // Seconds that will actually play: the preview's length, or the whole song.
+  length: number
   setMuted: (v: boolean) => void
   repeat: Repeat
   liked: Set<string>
@@ -82,6 +88,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [liked, toggleLikeRaw] = useStoredSet('liked')
   const [loved, toggleLoveRaw, setLoved] = useStoredSet('loved')
   const [disliked, toggleDislikeRaw] = useStoredSet('disliked')
+  // How long Spotify says the current song is: 30 s when it only gave a preview.
+  const [heard, setHeard] = useState({ uri: '', length: 0 })
+  const { starter } = useCatalog()
+
+  // When lea's Spotify music arrives, swap a demo queue for her recent songs.
+  const [seeded, setSeeded] = useState<string[]>([])
+  if (starter.length && seeded !== starter) {
+    setSeeded(starter)
+    if (queue.every((id) => demoIds.has(id))) {
+      setQueue(starter)
+      setIndex(0)
+      setPosition(0)
+    }
+  }
 
   const track = getTrack(queue[index] ?? queue[0])
   const dislikedRef = useRef(disliked)
@@ -123,33 +143,67 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Real songs play through Spotify's embed, demo songs as chiptune.
   useEffect(() => {
-    if (playing) chiptune.play(track.id)
-    else chiptune.pause()
-  }, [playing, track.id])
+    if (track.uri) {
+      chiptune.pause()
+      if (playing) void spotifyEmbed.play(track.uri)
+      else void spotifyEmbed.pause()
+    } else {
+      void spotifyEmbed.pause()
+      if (playing) chiptune.play(track.id)
+      else chiptune.pause()
+    }
+  }, [playing, track.id, track.uri])
 
   useEffect(() => {
     chiptune.setMuted(muted)
     save('muted', muted)
   }, [muted])
 
-  // the fake clock
+  // What happens when a song ends, for both the demo clock and Spotify.
+  const ended = useCallback(() => {
+    setPosition(0)
+    if (repeat === 'one') {
+      if (track.uri) void spotifyEmbed.seek(0)
+      return
+    }
+    if (repeat === 'off' && index === queue.length - 1) setPlaying(false)
+    else step(1)
+  }, [repeat, index, queue.length, step, track.uri])
+
+  // the demo clock
   useEffect(() => {
-    if (!playing) return
+    if (!playing || track.uri) return
     const id = window.setInterval(() => {
       setPosition((p) => {
         if (p + 1 < track.duration) return p + 1
-        if (repeat === 'one') return 0
-        if (repeat === 'off' && index === queue.length - 1) {
-          setPlaying(false)
-          return 0
-        }
-        queueMicrotask(() => step(1))
-        return 0
+        queueMicrotask(ended)
+        return p
       })
     }, 1000)
     return () => window.clearInterval(id)
-  }, [playing, track.duration, repeat, index, queue.length, step])
+  }, [playing, track.uri, track.duration, ended])
+
+  // Spotify's clock
+  const endedRef = useRef(ended)
+  useEffect(() => {
+    endedRef.current = ended
+  }, [ended])
+  useEffect(() => {
+    const uri = track.uri
+    if (!uri) return
+    let done = false
+    return spotifyEmbed.onUpdate((u) => {
+      if (u.duration <= 0) return
+      setHeard({ uri, length: u.duration / 1000 })
+      setPosition(Math.floor(u.position / 1000))
+      if (!done && u.position >= u.duration - 400) {
+        done = true
+        endedRef.current()
+      } else if (u.position < u.duration - 400) done = false
+    })
+  }, [track.uri])
 
   const playQueue = useCallback((ids: string[], start = 0) => {
     setQueue(ids)
@@ -207,6 +261,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [disliked, toggleDislikeRaw, track.id, step],
   )
 
+  const preview = heard.uri === track.uri && heard.length < track.duration - 5
+
   const api = useMemo<PlayerApi>(
     () => ({
       track,
@@ -216,6 +272,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       position,
       shuffle,
       muted,
+      preview,
+      length: preview ? heard.length : track.duration,
       setMuted: setMutedState,
       repeat,
       liked,
@@ -226,8 +284,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggle: () => setPlaying((p) => !p),
       next: () => step(1),
       prev: () => (position > 3 ? setPosition(0) : step(-1)),
-      seek: (s) =>
-        setPosition(Math.max(0, Math.min(track.duration - 1, Math.round(s)))),
+      seek: (s) => {
+        const end = preview ? heard.length : track.duration
+        const to = Math.max(0, Math.min(end - 1, Math.round(s)))
+        setPosition(to)
+        if (track.uri) void spotifyEmbed.seek(to)
+      },
       setShuffle,
       cycleRepeat: () =>
         setRepeat((r) => (r === 'off' ? 'all' : r === 'all' ? 'one' : 'off')),
@@ -243,6 +305,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       position,
       shuffle,
       muted,
+      heard,
+      preview,
       repeat,
       liked,
       loved,

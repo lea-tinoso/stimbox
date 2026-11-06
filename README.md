@@ -42,3 +42,18 @@ npm run dev
 - Caveat font: SIL Open Font License.
 
 The UI kit setup from ui-starter still applies: see [CLAUDE.md](CLAUDE.md) and [DESIGN.md](DESIGN.md).
+
+## Spotify
+
+Visitors don't log in. stimbox shows lea's own Spotify music, read on the server with her refresh token,
+and plays songs through Spotify's embed player (30-second previews unless the visitor is logged into
+Spotify in that browser). Without the env vars below, the app runs on its demo data.
+
+One-time setup on Vercel (Settings → Environment Variables):
+
+1. `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` from the Spotify developer dashboard. Server only.
+2. Deploy, open `https://stimbox.vercel.app/api/spotify/login`, approve, and copy the refresh token shown.
+3. Save it as `SPOTIFY_REFRESH_TOKEN` and redeploy.
+
+The functions live in `api/spotify/`. Lyrics come from [LRCLIB](https://lrclib.net) in the browser.
+`npm run dev` has no `/api`, so it shows demo data; use `vercel dev` to run the functions locally.

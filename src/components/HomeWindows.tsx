@@ -1,13 +1,6 @@
 import { useState } from 'react'
-import {
-  forYouPlaylists,
-  forYouSongs,
-  getTrack,
-  listenAgain,
-  stats,
-  trending,
-  type Range,
-} from '../data/fake.ts'
+import { getTrack, type Range } from '../data/fake.ts'
+import { useCatalog } from '../state/catalog.tsx'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 import { Art } from './Art.tsx'
@@ -18,6 +11,7 @@ import { Window } from './Window.tsx'
 export function ListenAgainWindow() {
   const { playQueue } = usePlayer()
   const { show } = useDesktop()
+  const { listenAgain } = useCatalog()
   return (
     <Window id="listen" title="listen again" width={820} height={252}>
       <div className="mb-2.5 flex items-center justify-between">
@@ -63,6 +57,7 @@ export function ListenAgainWindow() {
 export function ForYouWindow() {
   const [tab, setTab] = useState<'songs' | 'playlists'>('songs')
   const { playQueue } = usePlayer()
+  const { forYouSongs, forYouPlaylists, forYouNote } = useCatalog()
   return (
     <Window id="foryou" title="for you" width={404} height={392}>
       <div className="mb-2.5 flex items-center justify-between gap-2">
@@ -75,9 +70,7 @@ export function ForYouWindow() {
             { value: 'playlists', label: 'playlists' },
           ]}
         />
-        <span className="truncate text-[11px] text-mute">
-          because you played opm faves
-        </span>
+        <span className="truncate text-[11px] text-mute">{forYouNote}</span>
       </div>
       {tab === 'songs' ? (
         <TrackList label="suggested songs">
@@ -148,6 +141,7 @@ function Move({ move }: { move: number | 'new' }) {
 
 export function TrendingWindow() {
   const [region, setRegion] = useState<'ph' | 'asia' | 'world'>('ph')
+  const { trending } = useCatalog()
   return (
     <Window id="trending" title="trending" width={404} height={392}>
       <div className="mb-2.5">
@@ -174,8 +168,8 @@ export function TrendingWindow() {
 
 export function StatsWindow() {
   const [range, setRange] = useState<Range>('4w')
-  const s = stats[range]
-  const max = Math.max(...s.genres.map((g) => g.share))
+  const s = useCatalog().stats[range]
+  const max = Math.max(1, ...s.genres.map((g) => g.share))
   const peakAt = s.byHour.indexOf(Math.max(...s.byHour))
   return (
     <Window id="stats" title="your algorithm" width={300} height={742}>
@@ -192,6 +186,11 @@ export function StatsWindow() {
       <h3 className="mt-3 mb-2 text-[11px] font-bold tracking-wider text-mute uppercase">
         what you're into
       </h3>
+      {s.genres.length === 0 && (
+        <p className="text-[11px] text-mute">
+          spotify doesn’t share genres with new apps yet
+        </p>
+      )}
       <ul className="flex flex-col gap-1.5">
         {s.genres.map((g, i) => (
           <li key={g.name} className="flex items-center gap-2">
@@ -212,12 +211,13 @@ export function StatsWindow() {
           {s.hours}h
         </span>
         <span className="text-[11px] text-mute">
-          {range === '4w'
-            ? 'this month'
-            : range === '6m'
-              ? 'last 6 months'
-              : 'this year'}{' '}
-          · ▲ {s.hoursDelta}h
+          {s.hoursNote ??
+            (range === '4w'
+              ? 'this month'
+              : range === '6m'
+                ? 'last 6 months'
+                : 'this year')}
+          {s.hoursDelta !== undefined && ` · ▲ ${s.hoursDelta}h`}
         </span>
       </p>
       <div
@@ -263,10 +263,10 @@ export function StatsWindow() {
             >
               <span className="w-3 text-[11px] text-mute">{i + 1}</span>
               <Art art={t.art} size={30} />
-              <span>
-                <span className="block text-ink">{t.title}</span>
+              <span className="min-w-0">
+                <span className="block truncate text-ink">{t.title}</span>
                 <span className="block text-[11px] text-mute">
-                  {r.plays} plays
+                  {r.plays === undefined ? t.artist : `${r.plays} plays`}
                 </span>
               </span>
             </li>
