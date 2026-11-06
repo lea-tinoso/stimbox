@@ -9,7 +9,7 @@ export function GET(request: Request) {
     response_type: 'code',
     client_id: env('SPOTIFY_CLIENT_ID'),
     scope: SCOPES,
-    redirect_uri: `${origin}/callback`,
+    redirect_uri: `${origin}/api/spotify/callback`,
     state,
   }).toString()
   return new Response(null, {

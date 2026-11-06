@@ -1,6 +1,6 @@
 import { tokenRequest } from '../_spotify.js'
 
-// Step 2 of the one-time setup. Spotify sends lea back to /callback (rewritten here in vercel.json).
+// Step 2 of the one-time setup. Spotify sends lea back here.
 // The page shows her refresh token once so she can save it as SPOTIFY_REFRESH_TOKEN on Vercel.
 // Nothing is stored: anyone else who logs in only sees their own token.
 const page = (title: string, body: string) =>
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     const t = await tokenRequest({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: `${url.origin}/callback`,
+      redirect_uri: `${url.origin}/api/spotify/callback`,
     })
     return page(
       'stimbox is connected ♪',
