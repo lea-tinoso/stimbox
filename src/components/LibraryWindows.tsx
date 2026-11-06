@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { tracks } from '../data/fake.ts'
+import { recentCollections, recentSongs, tracks } from '../data/fake.ts'
 import { usePlayer } from '../state/player.tsx'
+import { Art } from './Art.tsx'
 import { Segmented } from './Pill.tsx'
 import { TrackList, TrackRow } from './TrackRow.tsx'
 import { Window } from './Window.tsx'
@@ -80,6 +81,69 @@ export function LibraryWindow() {
           />
         ))}
       </TrackList>
+    </Window>
+  )
+}
+
+// Opened from "more" on listen again: everything played lately, songs and playlists or albums.
+export function RecentWindow() {
+  const { playQueue } = usePlayer()
+  const [tab, setTab] = useState<'songs' | 'collections'>('songs')
+  return (
+    <Window id="recent" title="recently played" width={420} height={480}>
+      <div className="mb-2.5">
+        <Segmented
+          label="show"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'songs', label: 'songs' },
+            { value: 'collections', label: 'playlists & albums' },
+          ]}
+        />
+      </div>
+      {tab === 'songs' ? (
+        <TrackList label="recently played songs">
+          {recentSongs.map((r, i) => (
+            <TrackRow
+              key={`${r.trackId}-${i}`}
+              id={r.trackId}
+              trailing={
+                <span className="text-[11px] whitespace-nowrap text-mute">
+                  {r.when}
+                </span>
+              }
+            />
+          ))}
+        </TrackList>
+      ) : (
+        <ol
+          aria-label="recently played playlists and albums"
+          className="flex flex-col [&>li:nth-child(even)]:bg-stripe"
+        >
+          {recentCollections.map((c) => (
+            <li key={c.id}>
+              <button
+                type="button"
+                onClick={() => playQueue(c.trackIds)}
+                aria-label={`play ${c.title}`}
+                className="flex w-full items-center gap-2.5 px-1.5 py-1 text-left"
+              >
+                <Art art={c.art} size={40} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-ink">{c.title}</span>
+                  <span className="block truncate text-[11px] text-mute">
+                    {c.subtitle}
+                  </span>
+                </span>
+                <span className="text-[11px] text-mute">
+                  {c.trackIds.length} songs
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
     </Window>
   )
 }

@@ -24,7 +24,7 @@ export function ListenAgainWindow() {
         <p className="text-[11px] text-mute">
           playlists &amp; albums you played this week
         </p>
-        <Pill onClick={() => show('library')}>more ›</Pill>
+        <Pill onClick={() => show('recent')}>more ›</Pill>
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1">
         {listenAgain.map((c) => (

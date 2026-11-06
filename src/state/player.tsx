@@ -114,6 +114,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   // mockup audio follows play/pause and the current song
   useEffect(() => {
+    const opts = { capture: true }
+    window.addEventListener('pointerdown', chiptune.unlock, opts)
+    window.addEventListener('keydown', chiptune.unlock, opts)
+    return () => {
+      window.removeEventListener('pointerdown', chiptune.unlock, opts)
+      window.removeEventListener('keydown', chiptune.unlock, opts)
+    }
+  }, [])
+
+  useEffect(() => {
     if (playing) chiptune.play(track.id)
     else chiptune.pause()
   }, [playing, track.id])

@@ -132,9 +132,20 @@ class Chiptune {
     }
   }
 
+  // Safari only lets audio start inside a click or key press, and React effects run after it.
+  // So the first gesture anywhere on the page creates and starts the audio context.
+  unlock = () => {
+    const ctx = this.ensure()
+    if (ctx.state !== 'running') void ctx.resume()
+    const silent = ctx.createBufferSource()
+    silent.buffer = ctx.createBuffer(1, 1, 22050)
+    silent.connect(ctx.destination)
+    silent.start(0)
+  }
+
   play(id: string) {
     const ctx = this.ensure()
-    void ctx.resume()
+    if (ctx.state !== 'running') void ctx.resume()
     if (id !== this.songId) {
       this.song = compose(id)
       this.songId = id
@@ -147,7 +158,6 @@ class Chiptune {
   pause() {
     if (this.timer !== null) window.clearInterval(this.timer)
     this.timer = null
-    void this.ctx?.suspend()
   }
 
   setMuted(muted: boolean) {

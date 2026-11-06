@@ -213,6 +213,52 @@ export const listenAgain: Collection[] = [
   },
 ]
 
+// Everything played lately, newest first. "listen again" shows the top of the collections list.
+export const recentSongs: { trackId: string; when: string }[] = [
+  { trackId: 'best-part', when: 'now' },
+  { trackId: 'multo', when: '2h ago' },
+  { trackId: 'dilaw', when: '2h ago' },
+  { trackId: 'pasilyo', when: '3h ago' },
+  { trackId: 'pink-white', when: 'today' },
+  { trackId: 'tadhana', when: 'today' },
+  { trackId: 'ivy', when: 'today' },
+  { trackId: 'blink-twice', when: 'yesterday' },
+  { trackId: 'karera', when: 'yesterday' },
+  { trackId: 'get-you', when: 'wed' },
+  { trackId: 'palagi', when: 'tue' },
+  { trackId: 'sawa-na', when: 'tue' },
+  { trackId: 'museo', when: 'mon' },
+  { trackId: 'sana', when: 'last week' },
+]
+
+export const recentCollections: Collection[] = [
+  ...listenAgain,
+  {
+    id: 'rainy-day',
+    title: 'rainy day in manila',
+    kind: 'playlist',
+    subtitle: 'playlist · mon',
+    art: 'art-7',
+    trackIds: ['raining-in-manila', 'tadhana', 'sana', 'ere'],
+  },
+  {
+    id: 'hiling',
+    title: 'pantropiko era',
+    kind: 'playlist',
+    subtitle: 'playlist · last week',
+    art: 'art-8',
+    trackIds: ['pantropiko', 'karera', 'blink-twice'],
+  },
+  {
+    id: 'channel-orange',
+    title: 'channel orange',
+    kind: 'album',
+    subtitle: 'album · frank ocean · last week',
+    art: 'art-9',
+    trackIds: ['pink-white', 'ivy'],
+  },
+]
+
 export const forYouSongs = [
   'multo',
   'pasilyo',

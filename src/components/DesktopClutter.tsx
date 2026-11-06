@@ -1,5 +1,6 @@
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
+import { TypingBubble } from './TypingBubble.tsx'
 
 // Folders on the right edge and heyclicky-style stickers. Decoration, plus folder shortcuts.
 
@@ -52,9 +53,10 @@ export function DesktopClutter() {
         aria-hidden
         className="pointer-events-none fixed inset-0 z-[4] select-none"
       >
-        <div className="absolute top-[360px] right-[60px] rotate-[-4deg] bg-yellow px-3.5 py-3 font-hand text-[22px] leading-none text-ink shadow-sticker">
-          ♥ = saved to loved
-        </div>
+        <TypingBubble
+          text="memory: every lyric from 2009. not why i walked into this room"
+          className="absolute top-[282px] right-[22px] w-[248px] rotate-[-2deg]"
+        />
         <img
           src="/kitten.jpg"
           alt=""
