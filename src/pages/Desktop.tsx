@@ -8,7 +8,11 @@ import {
   TrendingWindow,
 } from '../components/HomeWindows.tsx'
 import { IPod } from '../components/IPod.tsx'
-import { LibraryWindow, SearchWindow } from '../components/LibraryWindows.tsx'
+import {
+  LibraryWindow,
+  RecentWindow,
+  SearchWindow,
+} from '../components/LibraryWindows.tsx'
 import { MenuBar } from '../components/MenuBar.tsx'
 import { NowPlayingWindow } from '../components/NowPlayingWindow.tsx'
 import { Signature } from '../components/Signature.tsx'
@@ -63,6 +67,7 @@ export default function Desktop() {
         <StatsWindow />
         <SearchWindow query={query} />
         <LibraryWindow />
+        <RecentWindow />
         <NowPlayingWindow />
         {!compact && <IPod />}
       </main>
