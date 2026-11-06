@@ -1,10 +1,16 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import Home from './pages/Home.tsx'
+import Desktop from './pages/Desktop.tsx'
+import { DesktopProvider } from './state/desktop.tsx'
+import { PlayerProvider } from './state/player.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Home />
+    <PlayerProvider>
+      <DesktopProvider>
+        <Desktop />
+      </DesktopProvider>
+    </PlayerProvider>
   </StrictMode>,
 )

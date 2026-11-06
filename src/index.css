@@ -1,31 +1,236 @@
 @import 'tailwindcss';
 
-/*
- * Design tokens. Placeholder neutral values until the project picks a design:
- *   1. npm run design -- <name>   (copies ui-kit/awesome-design-md/design-md/<name>/DESIGN.md to ./DESIGN.md)
- *   2. Map the DESIGN.md `colors`, `typography` and `rounded` values onto these tokens.
- * Components use only these tokens (bg-canvas, text-ink, rounded-control ...), never raw hex values.
- */
+/* Design tokens, mapped from DESIGN.md. Components use only these. */
 @theme {
-  --color-canvas: #ffffff;
-  --color-surface: #f5f5f4;
-  --color-ink: #1c1917;
-  --color-body: #57534e;
-  --color-mute: #a8a29e;
-  --color-hairline: #e7e5e4;
-  --color-primary: #1c1917;
-  --color-on-primary: #ffffff;
+  --color-desk: #f4f4f4;
+  --color-window: #ffffff;
+  --color-ink: #111111;
+  --color-body: #333333;
+  --color-mute: #6b6b6b;
+  --color-faint: #b5b5bd;
+  --color-hairline: #8d8d8d;
+  --color-chrome-hi: #ececec;
+  --color-chrome-lo: #c9c9c9;
+  --color-stripe: #edf3fe;
+  --color-aqua-hi: #cfe6ff;
+  --color-aqua: #3d8cf0;
+  --color-aqua-deep: #2a73e6;
+  --color-aqua-edge: #3567a8;
+  --color-selection: #3875d7;
+  --color-pink: #f24fd0;
+  --color-pink-soft: #ffd1f0;
+  --color-yellow: #ffe45c;
+  --color-red: #e5484d;
+  --color-green: #0a8a3a;
+  --color-light-red: #ff5f57;
+  --color-light-yellow: #febc2e;
+  --color-light-green: #28c840;
+  --color-lcd: #c9d9e8;
+  --color-lcd-ink: #1b2a3a;
+  --color-ipod-hi: #fbfbfb;
+  --color-ipod-lo: #d4d4da;
 
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-display: ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, monospace;
+  --font-sans:
+    'Lucida Grande', 'Lucida Sans Unicode', 'DejaVu Sans', Verdana, sans-serif;
+  --font-hand: 'Caveat', cursive;
 
-  --radius-control: 0.5rem;
-  --radius-card: 0.75rem;
+  --radius-window: 7px;
+  --radius-art: 3px;
+  --radius-pill: 999px;
+
+  --shadow-window: 0 12px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px rgb(0 0 0 / 0.3);
+  --shadow-sticker: 0 6px 14px rgb(0 0 0 / 0.14);
+}
+
+@font-face {
+  font-family: 'Caveat';
+  src: url('/fonts/Caveat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
 }
 
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
   body {
-    @apply bg-canvas font-sans text-body antialiased;
+    @apply bg-desk font-sans text-body antialiased;
+    font-size: 12px;
+    overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection {
+    background: var(--color-selection);
+    color: var(--color-window);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-aqua);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Aqua surfaces. Gradients are built only from theme tokens. */
+@layer components {
+  .aqua-titlebar {
+    background:
+      repeating-linear-gradient(
+        color-mix(in srgb, var(--color-window) 55%, transparent) 0 1px,
+        transparent 1px 2px
+      ),
+      linear-gradient(var(--color-chrome-hi), var(--color-chrome-lo));
+  }
+  .aqua-pill {
+    background: linear-gradient(
+      var(--color-window) 0,
+      var(--color-chrome-hi) 50%,
+      color-mix(in srgb, var(--color-chrome-lo) 70%, var(--color-window)) 51%,
+      var(--color-chrome-hi) 100%
+    );
+    box-shadow: 0 1px 1px rgb(0 0 0 / 0.15);
+  }
+  .aqua-pill[aria-pressed='true'],
+  .aqua-pill[aria-selected='true'],
+  .aqua-gel {
+    background: linear-gradient(
+      var(--color-aqua-hi) 0,
+      color-mix(in srgb, var(--color-aqua) 60%, var(--color-window)) 50%,
+      var(--color-aqua) 51%,
+      color-mix(in srgb, var(--color-aqua-hi) 60%, var(--color-aqua)) 100%
+    );
+    border-color: var(--color-aqua-edge);
+    color: var(--color-lcd-ink);
+  }
+  .aqua-bar {
+    background: linear-gradient(
+      var(--color-aqua-hi),
+      var(--color-aqua) 50%,
+      var(--color-aqua-deep) 51%,
+      color-mix(in srgb, var(--color-aqua-hi) 50%, var(--color-aqua))
+    );
+  }
+  .aqua-bar-pink {
+    background: linear-gradient(
+      var(--color-pink-soft),
+      var(--color-pink) 50%,
+      color-mix(in srgb, var(--color-pink) 80%, var(--color-ink)) 51%,
+      color-mix(in srgb, var(--color-pink-soft) 50%, var(--color-pink))
+    );
+  }
+  .light {
+    background: radial-gradient(
+      circle at 50% 30%,
+      color-mix(in srgb, currentColor 30%, var(--color-window)),
+      currentColor 55%,
+      color-mix(in srgb, currentColor 70%, var(--color-ink))
+    );
+    box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.5);
+  }
+  .ipod-body {
+    background: linear-gradient(
+      145deg,
+      var(--color-ipod-hi),
+      var(--color-ipod-lo)
+    );
+    box-shadow:
+      3px 5px 0 rgb(0 0 0 / 0.18),
+      0 18px 30px rgb(0 0 0 / 0.2),
+      inset 0 0 0 3px var(--color-window);
+  }
+  .ipod-wheel {
+    background: linear-gradient(var(--color-window), var(--color-chrome-hi));
+    box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.12);
+  }
+  .lcd-bar {
+    background: linear-gradient(var(--color-window), var(--color-lcd));
+  }
+  .dock-glass {
+    background: linear-gradient(
+      color-mix(in srgb, var(--color-window) 35%, transparent),
+      color-mix(in srgb, var(--color-window) 75%, transparent) 60%,
+      color-mix(in srgb, var(--color-chrome-hi) 90%, transparent)
+    );
+    box-shadow:
+      0 -1px 0 rgb(0 0 0 / 0.15),
+      0 -6px 18px rgb(0 0 0 / 0.12);
+  }
+
+  /* Placeholder album art: fake data has no real covers. */
+  .art-1 {
+    background: linear-gradient(135deg, var(--color-pink), var(--color-yellow));
+  }
+  .art-2 {
+    background: conic-gradient(
+      from 45deg,
+      var(--color-aqua-deep),
+      var(--color-aqua-hi),
+      var(--color-aqua-deep)
+    );
+  }
+  .art-3 {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-ink) 0 6px,
+      var(--color-desk) 6px 12px
+    );
+  }
+  .art-4 {
+    background: radial-gradient(
+      circle at 30% 30%,
+      var(--color-yellow),
+      var(--color-red) 60%,
+      var(--color-ink)
+    );
+  }
+  .art-5 {
+    background: linear-gradient(
+      var(--color-stripe) 0 50%,
+      var(--color-green) 50%
+    );
+  }
+  .art-6 {
+    background:
+      radial-gradient(var(--color-ink) 2px, transparent 2.5px) 0 0 / 8px 8px,
+      var(--color-pink-soft);
+  }
+  .art-7 {
+    background: linear-gradient(
+      90deg,
+      var(--color-ink) 0 33%,
+      var(--color-pink) 33% 66%,
+      var(--color-desk) 66%
+    );
+  }
+  .art-8 {
+    background: conic-gradient(
+      var(--color-yellow) 0 25%,
+      var(--color-aqua) 0 50%,
+      var(--color-pink) 0 75%,
+      var(--color-ink) 0
+    );
+  }
+  .art-9 {
+    background: linear-gradient(
+      160deg,
+      var(--color-stripe),
+      var(--color-hairline)
+    );
+  }
+  .art-10 {
+    background: repeating-radial-gradient(
+      circle,
+      var(--color-ink) 0 2px,
+      var(--color-window) 2px 6px
+    );
   }
 }
