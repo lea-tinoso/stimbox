@@ -129,7 +129,7 @@ export function PhoneIPod() {
   const catalog = useCatalog()
   const { playlists } = usePlaylists()
   const [stack, setStack] = useState<{ s: Screen; sel: number }[]>([
-    { s: { id: 'menu' }, sel: 0 },
+    { s: { id: 'now' }, sel: 0 },
   ])
   const top = stack[stack.length - 1]
   const screen = top.s
@@ -140,10 +140,15 @@ export function PhoneIPod() {
   const recent = useRecentSearches()
 
   const push = (s: Screen) => setStack((st) => [...st, { s, sel: 0 }])
-  const back = () => setStack((st) => (st.length > 1 ? st.slice(0, -1) : st))
+  // MENU goes back; on the lyrics (the home screen) it opens the menu.
+  const back = () =>
+    setStack((st) =>
+      st.length > 1 ? st.slice(0, -1) : [...st, { s: { id: 'menu' }, sel: 0 }],
+    )
   const setSel = (sel: number) =>
     setStack((st) => [...st.slice(0, -1), { ...st[st.length - 1], sel }])
-  const nowPlaying = () => push({ id: 'now' })
+  // Back to the lyrics, the home screen.
+  const nowPlaying = () => setStack((st) => st.slice(0, 1))
 
   const q = screen.id === 'search' ? query.trim().toLowerCase() : ''
   const found = useSearch(q)
@@ -435,14 +440,14 @@ export function PhoneIPod() {
   }
 
   return (
-    <div className="fixed inset-0 flex bg-desk p-2 pt-[max(8px,env(safe-area-inset-top))] pb-[max(8px,env(safe-area-inset-bottom))]">
+    <div className="fixed inset-0 grid place-items-center bg-desk p-3">
       <h1 className="sr-only">stimbox</h1>
       <section
         aria-label="ipod"
-        className="ipod-body flex min-w-0 flex-1 flex-col rounded-[34px] border border-hairline p-4 select-none"
+        className="ipod-body @container flex aspect-[3/5] w-[min(calc(100vw-24px),calc((100dvh-24px)*0.6),420px)] flex-col rounded-[9cqw] border border-hairline p-[6cqw] select-none"
       >
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border-2 border-lcd-ink/80 bg-lcd text-lcd-ink">
-          <header className="lcd-bar grid h-8 shrink-0 grid-cols-[2.5rem_1fr_2.5rem] items-center border-b border-lcd-ink/60 text-[14px] font-bold">
+        <div className="flex h-[68cqw] shrink-0 flex-col overflow-hidden rounded-[2cqw] border-2 border-lcd-ink/80 bg-lcd text-lcd-ink">
+          <header className="lcd-bar grid h-[8cqw] shrink-0 grid-cols-[2.5rem_1fr_2.5rem] items-center border-b border-lcd-ink/60 text-[4cqw] font-bold">
             {stack.length > 1 ? (
               <button
                 type="button"
@@ -533,13 +538,13 @@ export function PhoneIPod() {
                         setSel(i)
                         r.go()
                       }}
-                      className={`flex min-h-11 w-full items-center gap-2.5 px-3 py-1.5 text-left ${
+                      className={`flex min-h-10 w-full items-center gap-2 px-2.5 py-1 text-left ${
                         i === sel ? 'lcd-sel' : ''
                       }`}
                     >
-                      {r.art && <Art art={r.art} size={40} round={r.round} />}
+                      {r.art && <Art art={r.art} size={32} round={r.round} />}
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[16px]">
+                        <span className="block truncate text-[15px]">
                           {r.label}
                         </span>
                         {r.sub && (
@@ -573,10 +578,10 @@ export function PhoneIPod() {
           )}
         </div>
 
-        <div className="grid shrink-0 place-items-center pt-4 pb-1">
+        <div className="grid flex-1 place-items-center">
           <div
             {...wheel}
-            className="ipod-wheel relative size-[min(68vw,30dvh)] touch-none rounded-full border border-hairline/70 text-[15px] font-bold text-mute"
+            className="ipod-wheel relative size-[64cqw] touch-none rounded-full border border-hairline/70 text-[4.2cqw] font-bold text-mute"
           >
             <button
               type="button"
@@ -626,47 +631,40 @@ function NowPlaying({ onArtist }: { onArtist: (name: string) => void }) {
   const p = usePlayer()
   const { lines } = useLyrics(p.track)
   const cur = currentLine(lines, p.position)
-  const next = p.queue[p.index + 1]
-  const art = p.track.art
-  const big =
-    'aspect-square w-[min(62vw,30dvh)] rounded-art border border-ink/25 shadow-[0_4px_12px_rgb(0_0_0/0.25)]'
+  const first = p.track.artist.split(', ')[0]
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto pt-2">
-      <p className="w-full truncate px-3 text-center text-[12px] opacity-75">
-        {p.index + 1} of {p.queue.length}
-        {p.radio && ' · radio'}
-        {next && ` · up next: ${getTrack(next).title}`}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <p className="truncate px-[3cqw] pt-[1.5cqw] text-center text-[3.6cqw]">
+        <b>{p.track.title}</b> ·{' '}
+        <button
+          type="button"
+          onClick={() => onArtist(first)}
+          className="underline underline-offset-2"
+        >
+          {p.track.artist}
+        </button>
       </p>
-      {art.startsWith('https://') ? (
-        <img src={art} alt="" className={`${big} mt-2 object-cover`} />
-      ) : (
-        <span aria-hidden className={`${art} ${big} mt-2 block`} />
-      )}
-      <p className="mt-2 w-full truncate px-3 text-center text-[19px] font-bold">
-        {p.track.title}
-      </p>
-      <p className="w-full truncate px-3 text-center text-[14px]">
-        {p.track.artist.split(', ').map((name, i) => (
-          <span key={name}>
-            {i > 0 && ', '}
-            <button
-              type="button"
-              onClick={() => onArtist(name)}
-              className="underline underline-offset-2"
-            >
-              {name}
-            </button>
-          </span>
-        ))}
-        <span className="opacity-75"> · {p.track.album}</span>
-      </p>
-      <p
+      <div
         aria-live="polite"
-        className="mt-2 w-full truncate bg-lcd-ink px-3 py-1 text-center text-[14px] text-lcd"
+        className="flex flex-1 flex-col justify-center gap-[1cqw] px-[3cqw] text-center"
       >
-        {lines[cur]?.text ?? '♪ ♪ ♪'}
-      </p>
-      <label className="relative mx-3 mt-3 block h-[9px] w-[calc(100%-1.5rem)] border border-lcd-ink bg-window">
+        {[-1, 0, 1].map((d) => {
+          const line = lines[cur + d]?.text
+          return d === 0 ? (
+            <p
+              key={d}
+              className="line-clamp-2 bg-lcd-ink px-[2cqw] py-[0.5cqw] text-[5cqw] leading-snug text-lcd"
+            >
+              {line ?? '♪ ♪ ♪'}
+            </p>
+          ) : (
+            <p key={d} className="truncate text-[4cqw] opacity-50">
+              {line ?? '\u00a0'}
+            </p>
+          )
+        })}
+      </div>
+      <label className="relative mx-[3cqw] block h-[2.2cqw] border border-lcd-ink bg-window">
         <span className="sr-only">seek</span>
         <span
           className="block h-full bg-lcd-ink"
@@ -681,41 +679,10 @@ function NowPlaying({ onArtist }: { onArtist: (name: string) => void }) {
           className="absolute -inset-y-3 inset-x-0 h-auto w-full cursor-pointer opacity-0"
         />
       </label>
-      <p className="flex w-full justify-between px-3 pt-0.5 text-[12px] tabular-nums">
+      <p className="flex justify-between px-[3cqw] pt-[0.5cqw] pb-[1cqw] text-[3.2cqw] tabular-nums">
         <span>{fmt(p.position)}</span>
         <span>-{fmt(p.length - p.position)}</span>
       </p>
-      <div className="mt-1 mb-2 flex gap-2 text-[13px]">
-        {(
-          [
-            ['shuffle', p.shuffle, () => p.setShuffle(!p.shuffle)],
-            [
-              p.repeat === 'one' ? 'repeat 1' : 'repeat',
-              p.repeat !== 'off',
-              p.cycleRepeat,
-            ],
-            [
-              p.muted ? 'sound off' : 'sound on',
-              !p.muted,
-              () => p.setMuted(!p.muted),
-            ],
-            ['♥', p.loved.has(p.track.id), () => p.toggleLove(p.track.id)],
-          ] as const
-        ).map(([label, on, run]) => (
-          <button
-            key={label}
-            type="button"
-            aria-pressed={on}
-            aria-label={label === '♥' ? 'love' : undefined}
-            onClick={run}
-            className={`rounded-pill border px-2.5 py-1 ${
-              on ? 'lcd-sel border-aqua-edge' : 'border-lcd-ink/40'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
