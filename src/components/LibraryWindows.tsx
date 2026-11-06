@@ -6,6 +6,7 @@ import {
   type Art as ArtKind,
   type Collection,
 } from '../data/fake.ts'
+import { hiddenPlaylists } from '../lib/hiddenPlaylists.ts'
 import { recentSearches } from '../lib/recentSearches.ts'
 import type { OutResult, OutTrack, SearchData } from '../data/spotify-types.ts'
 import { toTrack } from '../data/catalog.ts'
@@ -451,11 +452,11 @@ export function LibraryWindow() {
                 className="mb-3 flex flex-col [&>li:nth-child(even)]:bg-stripe"
               >
                 {spotifyPlaylists.map((c) => (
-                  <li key={c.id}>
+                  <li key={c.id} className="flex items-center gap-2 pr-1.5">
                     <button
                       type="button"
                       onClick={() => openCollection(c)}
-                      className="flex w-full items-center gap-2.5 px-1.5 py-1.5 text-left"
+                      className="flex min-w-0 flex-1 items-center gap-2.5 px-1.5 py-1.5 text-left"
                     >
                       <Art art={c.art} size={36} />
                       <span className="min-w-0">
@@ -467,6 +468,15 @@ export function LibraryWindow() {
                         </span>
                       </span>
                     </button>
+                    <RemoveButton
+                      label={`delete playlist ${c.title}`}
+                      onClick={() =>
+                        setToast({
+                          text: `deleted ${c.title} from stimbox · still on spotify`,
+                          undo: hiddenPlaylists.hide(c.id),
+                        })
+                      }
+                    />
                   </li>
                 ))}
               </ul>
