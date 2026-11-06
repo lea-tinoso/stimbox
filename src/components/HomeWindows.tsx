@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { getTrack, type Range } from '../data/fake.ts'
+import { useTrending, type Region } from '../lib/useTrending.ts'
 import { useCatalog } from '../state/catalog.tsx'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 import { Art } from './Art.tsx'
 import { Pill, Segmented } from './Pill.tsx'
+import { ArtistLinks } from './ArtistLinks.tsx'
 import { TrackList, TrackRow } from './TrackRow.tsx'
 import { Window } from './Window.tsx'
 
 export function ListenAgainWindow() {
   const { playQueue } = usePlayer()
-  const { show } = useDesktop()
+  const { show, openCollection } = useDesktop()
   const { listenAgain } = useCatalog()
   return (
     <Window id="listen" title="listen again" width={820} height={252}>
@@ -22,30 +24,30 @@ export function ListenAgainWindow() {
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1">
         {listenAgain.map((c) => (
-          <li key={c.id} className="w-[118px] shrink-0">
+          <li key={c.id} className="group relative w-[118px] shrink-0">
             <button
               type="button"
-              onClick={() => playQueue(c.trackIds)}
-              className="group w-full text-left"
-              aria-label={`play ${c.title}`}
+              onClick={() => openCollection(c)}
+              className="w-full text-left"
+              aria-label={`open ${c.title}`}
             >
-              <span className="relative block">
-                <Art
-                  art={c.art}
-                  size={118}
-                  className="shadow-[0_3px_8px_rgb(0_0_0/0.25)] transition group-hover:brightness-90"
-                />
-                <span
-                  aria-hidden
-                  className="absolute inset-0 hidden place-items-center text-[30px] text-window drop-shadow group-hover:grid"
-                >
-                  ▶
-                </span>
-              </span>
+              <Art
+                art={c.art}
+                size={118}
+                className="shadow-[0_3px_8px_rgb(0_0_0/0.25)] transition group-hover:brightness-90"
+              />
               <span className="mt-1.5 block truncate text-ink">{c.title}</span>
               <span className="block truncate text-[11px] text-mute">
                 {c.subtitle}
               </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => playQueue(c.trackIds)}
+              aria-label={`play ${c.title}`}
+              className="aqua-gel absolute right-1.5 bottom-[52px] grid size-8 place-items-center rounded-full border text-[13px] opacity-0 shadow-window transition group-hover:opacity-100 focus-visible:opacity-100"
+            >
+              ▶
             </button>
           </li>
         ))}
@@ -56,7 +58,7 @@ export function ListenAgainWindow() {
 
 export function ForYouWindow() {
   const [tab, setTab] = useState<'songs' | 'playlists'>('songs')
-  const { playQueue } = usePlayer()
+  const { openCollection } = useDesktop()
   const { forYouSongs, forYouPlaylists, forYouNote } = useCatalog()
   return (
     <Window id="foryou" title="for you" width={404} height={392}>
@@ -84,7 +86,7 @@ export function ForYouWindow() {
             <li key={p.id}>
               <button
                 type="button"
-                onClick={() => playQueue(p.trackIds)}
+                onClick={() => openCollection(p)}
                 className="flex w-full items-center gap-2.5 px-1.5 py-1.5 text-left"
               >
                 <Art art={p.art} size={44} />
@@ -140,8 +142,8 @@ function Move({ move }: { move: number | 'new' }) {
 }
 
 export function TrendingWindow() {
-  const [region, setRegion] = useState<'ph' | 'asia' | 'world'>('ph')
-  const { trending } = useCatalog()
+  const [region, setRegion] = useState<Region>('ph')
+  const { entries, loading } = useTrending(region)
   return (
     <Window id="trending" title="trending" width={404} height={392}>
       <div className="mb-2.5">
@@ -153,7 +155,10 @@ export function TrendingWindow() {
         />
       </div>
       <TrackList label={`trending in ${region}`}>
-        {trending[region].map((e, i) => (
+        {loading && (
+          <li className="px-1.5 py-2 text-[11px] text-mute">loading charts…</li>
+        )}
+        {entries.map((e, i) => (
           <TrackRow
             key={e.trackId}
             id={e.trackId}
@@ -169,6 +174,7 @@ export function TrendingWindow() {
 export function StatsWindow() {
   const [range, setRange] = useState<Range>('4w')
   const s = useCatalog().stats[range]
+  const { openArtist, openSong } = useDesktop()
   const max = Math.max(1, ...s.genres.map((g) => g.share))
   const peakAt = s.byHour.indexOf(Math.max(...s.byHour))
   return (
@@ -243,10 +249,16 @@ export function StatsWindow() {
       </h3>
       <ol className="flex flex-col [&>li:nth-child(even)]:bg-stripe">
         {s.topArtists.map((a, i) => (
-          <li key={a.name} className="flex items-center gap-2.5 px-1.5 py-1">
-            <span className="w-3 text-[11px] text-mute">{i + 1}</span>
-            <Art art={a.art} size={30} round />
-            <span className="text-ink">{a.name}</span>
+          <li key={a.name}>
+            <button
+              type="button"
+              onClick={() => openArtist(a.name)}
+              className="group flex w-full items-center gap-2.5 px-1.5 py-1 text-left"
+            >
+              <span className="w-3 text-[11px] text-mute">{i + 1}</span>
+              <Art art={a.art} size={30} round />
+              <span className="text-ink group-hover:underline">{a.name}</span>
+            </button>
           </li>
         ))}
       </ol>
@@ -264,9 +276,19 @@ export function StatsWindow() {
               <span className="w-3 text-[11px] text-mute">{i + 1}</span>
               <Art art={t.art} size={30} />
               <span className="min-w-0">
-                <span className="block truncate text-ink">{t.title}</span>
-                <span className="block text-[11px] text-mute">
-                  {r.plays === undefined ? t.artist : `${r.plays} plays`}
+                <button
+                  type="button"
+                  onClick={() => openSong(t.id)}
+                  className="block max-w-full truncate text-left text-ink hover:underline"
+                >
+                  {t.title}
+                </button>
+                <span className="block truncate text-[11px] text-mute">
+                  {r.plays === undefined ? (
+                    <ArtistLinks artist={t.artist} />
+                  ) : (
+                    `${r.plays} plays`
+                  )}
                 </span>
               </span>
             </li>

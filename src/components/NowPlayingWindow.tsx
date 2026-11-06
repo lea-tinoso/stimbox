@@ -3,10 +3,12 @@ import { currentLine, fmt, getTrack } from '../data/fake.ts'
 import { useLyrics } from '../lib/lyrics.ts'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
+import { AddToPlaylist } from './AddToPlaylist.tsx'
 import { Art } from './Art.tsx'
 import { Pill, Segmented } from './Pill.tsx'
 import { Reactions } from './Reactions.tsx'
 import { TrackList, TrackRow } from './TrackRow.tsx'
+import { ArtistLinks } from './ArtistLinks.tsx'
 import { Window } from './Window.tsx'
 
 export function NowPlayingWindow() {
@@ -44,7 +46,11 @@ export function NowPlayingWindow() {
           {p.track.title}
         </h3>
         <p className="text-[15px] text-mute">
-          {p.track.artist} · {p.track.album} · {p.track.year}
+          <ArtistLinks
+            artist={p.track.artist}
+            className="hover:text-ink hover:underline"
+          />{' '}
+          · {p.track.album} · {p.track.year}
         </p>
         <label className="mt-4 block">
           <span className="sr-only">seek</span>
@@ -61,14 +67,14 @@ export function NowPlayingWindow() {
           <span>{fmt(p.position)}</span>
           <span>{fmt(p.length)}</span>
         </p>
-        <p className="mt-1 text-[11px] text-mute">
-          {p.track.uri
-            ? p.preview
+        {(p.preview || !p.track.uri) && (
+          <p className="mt-1 text-[11px] text-mute">
+            {p.track.uri
               ? 'playing a 30-second preview from spotify · log into spotify in this browser for full songs'
-              : 'playing from spotify'
-            : 'demo song · chiptune stand-in'}
-        </p>
-        <div className="mt-3 flex items-center gap-2">
+              : 'demo song · chiptune stand-in'}
+          </p>
+        )}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Pill
             pressed={p.shuffle}
             onClick={() => p.setShuffle(!p.shuffle)}
@@ -107,9 +113,23 @@ export function NowPlayingWindow() {
           >
             {p.repeat === 'one' ? '↻¹' : '↻'}
           </Pill>
-          <div className="ml-auto">
-            <Reactions variant="aqua" />
-          </div>
+          <Pill
+            pressed={!p.muted}
+            onClick={() => p.setMuted(!p.muted)}
+            aria-label="sound"
+            title={
+              p.track.uri && p.muted
+                ? 'sound off pauses spotify songs'
+                : undefined
+            }
+            className="!px-3 text-[15px]"
+          >
+            <span aria-hidden>{p.muted ? '🔇' : '🔊'}</span>
+          </Pill>
+        </div>
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          <Reactions variant="aqua" />
+          <AddToPlaylist id={p.track.id} pill />
         </div>
       </div>
 

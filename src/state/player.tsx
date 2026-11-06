@@ -8,7 +8,15 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { demoIds, getTrack, type Track } from '../data/fake.ts'
+import {
+  demoIds,
+  getTrack,
+  registerTracks,
+  trackById,
+  type Track,
+} from '../data/fake.ts'
+import { toTrack } from '../data/catalog.ts'
+import type { OutTrack } from '../data/spotify-types.ts'
 import { chiptune } from '../lib/chiptune.ts'
 import { spotifyEmbed } from '../lib/spotifyEmbed.ts'
 import { useCatalog } from './catalog.tsx'
@@ -37,6 +45,9 @@ type PlayerApi = {
   disliked: Set<string>
   playQueue: (ids: string[], start?: number) => void
   playTrack: (id: string) => void
+  // Play a song, then keep going with similar songs (a song picked from search).
+  playRadio: (id: string) => void
+  radio: boolean
   toggle: () => void
   next: () => void
   prev: () => void
@@ -76,10 +87,18 @@ function useStoredSet(key: string) {
 }
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const [queue, setQueue] = useState<string[]>(() =>
-    load('queue', DEFAULT_QUEUE),
+  // The queue is saved by song id; Spotify songs' details are saved alongside so a reload can
+  // still show them (otherwise unknown ids fell back to the first demo song, "best part").
+  const [queue, setQueue] = useState<string[]>(() => {
+    registerTracks(load<Track[]>('queueTracks', []))
+    const known = load<string[]>('queue', DEFAULT_QUEUE).filter((id) =>
+      trackById.has(id),
+    )
+    return known.length ? known : DEFAULT_QUEUE
+  })
+  const [index, setIndex] = useState(() =>
+    Math.min(load('index', 0), queue.length - 1),
   )
-  const [index, setIndex] = useState(() => load('index', 0))
   const [position, setPosition] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [shuffle, setShuffle] = useState(false)
@@ -111,6 +130,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     save('queue', queue)
+    save(
+      'queueTracks',
+      queue.filter((id) => !demoIds.has(id)).map((id) => trackById.get(id)),
+    )
     save('index', index)
   }, [queue, index])
 
@@ -148,13 +171,26 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (track.uri) {
       chiptune.pause()
       if (playing) void spotifyEmbed.play(track.uri)
-      else void spotifyEmbed.pause()
+      else {
+        void spotifyEmbed.pause()
+        void spotifyEmbed.cue(track.uri)
+      }
     } else {
       void spotifyEmbed.pause()
       if (playing) chiptune.play(track.id)
       else chiptune.pause()
     }
   }, [playing, track.id, track.uri])
+
+  // Spotify's player has no volume control: sound off pauses a Spotify song, and playing one
+  // turns the sound back on (before, a muted Spotify song looked like it played but was silent).
+  const setMuted = useCallback(
+    (v: boolean) => {
+      setMutedState(v)
+      if (v && track.uri) setPlaying(false)
+    },
+    [track.uri],
+  )
 
   useEffect(() => {
     chiptune.setMuted(muted)
@@ -194,27 +230,99 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const uri = track.uri
     if (!uri) return
     let done = false
+    let last = 0
     return spotifyEmbed.onUpdate((u) => {
       if (u.duration <= 0) return
       setHeard({ uri, length: u.duration / 1000 })
       setPosition(Math.floor(u.position / 1000))
-      if (!done && u.position >= u.duration - 400) {
+      // In a background tab the browser slows the player's updates down, so the one at the
+      // very end can be missed. Also count it as ended when Spotify stops by itself (we didn't
+      // pause it) or jumps back to the start, shortly after we last saw it near the end.
+      const nearEnd = last >= u.duration - 15000
+      const stoppedByItself =
+        u.isPaused && !u.isBuffering && spotifyEmbed.wantsToPlay()
+      const ended =
+        u.position >= u.duration - 400 ||
+        (nearEnd &&
+          (stoppedByItself ||
+            (u.position < last - 5000 && !spotifyEmbed.justSeeked())))
+      if (!done && ended) {
         done = true
+        spotifyEmbed.log('song ended, next', {
+          at: last,
+          hidden: document.hidden,
+        })
         endedRef.current()
-      } else if (u.position < u.duration - 400) done = false
+      } else if (!ended) done = false
+      last = u.position
     })
   }, [track.uri])
 
+  // Radio: after a song from search, keep adding similar songs before the queue runs out.
+  const [radio, setRadio] = useState<{ seed: string; page: number } | null>(
+    null,
+  )
+  const radioBusy = useRef(false)
+  useEffect(() => {
+    // Keep about 10 songs ahead.
+    if (!radio || radioBusy.current || index < queue.length - 10) return
+    const seed = getTrack(radio.seed)
+    if (!seed.uri) return
+    radioBusy.current = true
+    const ctl = new AbortController()
+    const qs = new URLSearchParams({
+      track: seed.title,
+      artist: seed.artist,
+      page: String(radio.page),
+    })
+    fetch(`/api/spotify/radio?${qs}`, { signal: ctl.signal })
+      .then((r) =>
+        r.ok ? (r.json() as Promise<{ tracks: OutTrack[] }>) : null,
+      )
+      .then((d) => {
+        const list = (d?.tracks ?? []).map(toTrack)
+        registerTracks(list)
+        const fresh = list.map((t) => t.id).filter((id) => !queue.includes(id))
+        if (fresh.length) {
+          setQueue((q) => [...q, ...fresh.filter((id) => !q.includes(id))])
+          setRadio({ seed: radio.seed, page: radio.page + 1 })
+        } else if (radio.page < 4) setRadio({ ...radio, page: radio.page + 1 })
+        else setRadio(null)
+      })
+      .catch(() => {})
+      .finally(() => {
+        radioBusy.current = false
+      })
+    return () => {
+      ctl.abort()
+      radioBusy.current = false
+    }
+  }, [radio, index, queue])
+
+  const playRadio = useCallback((id: string) => {
+    setQueue([id])
+    setIndex(0)
+    setPosition(0)
+    setPlaying(true)
+    if (getTrack(id).uri) setMutedState(false)
+    setRadio({ seed: id, page: 0 })
+  }, [])
+
   const playQueue = useCallback((ids: string[], start = 0) => {
+    setRadio(null)
     setQueue(ids)
     setIndex(start)
     setPosition(0)
     setPlaying(true)
+    if (getTrack(ids[start] ?? '').uri) setMutedState(false)
   }, [])
 
   const playTrack = useCallback(
     (id: string) => {
       const at = queue.indexOf(id)
+      // A Spotify song from outside the queue (trending, for you, a song page) starts a fresh
+      // queue of similar songs, like YouTube Music's radio, instead of slipping into the old one.
+      if (at < 0 && getTrack(id).uri) return playRadio(id)
       if (at >= 0) {
         setIndex(at)
       } else {
@@ -223,8 +331,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       setPosition(0)
       setPlaying(true)
+      if (getTrack(id).uri) setMutedState(false)
     },
-    [queue, index],
+    [queue, index, playRadio],
   )
 
   const toggleLove = useCallback(
@@ -274,14 +383,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       muted,
       preview,
       length: preview ? heard.length : track.duration,
-      setMuted: setMutedState,
+      setMuted,
       repeat,
       liked,
       loved,
       disliked,
       playQueue,
       playTrack,
-      toggle: () => setPlaying((p) => !p),
+      playRadio,
+      radio: radio !== null,
+      toggle: () => {
+        if (!playing && track.uri) setMutedState(false)
+        setPlaying((p) => !p)
+      },
       next: () => step(1),
       prev: () => (position > 3 ? setPosition(0) : step(-1)),
       seek: (s) => {
@@ -305,6 +419,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       position,
       shuffle,
       muted,
+      setMuted,
       heard,
       preview,
       repeat,
@@ -313,6 +428,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       disliked,
       playQueue,
       playTrack,
+      playRadio,
+      radio,
       step,
       toggleLike,
       toggleLove,

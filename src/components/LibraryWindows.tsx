@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
-import { getTrack, registerTracks, tracks } from '../data/fake.ts'
-import type { OutTrack } from '../data/spotify-types.ts'
+import {
+  getTrack,
+  registerTracks,
+  type Art as ArtKind,
+  type Collection,
+} from '../data/fake.ts'
+import { hiddenPlaylists } from '../lib/hiddenPlaylists.ts'
+import { ownerFetch, useIsOwner } from '../lib/owner.ts'
+import { recentSearches } from '../lib/recentSearches.ts'
+import type { OutResult, OutTrack } from '../data/spotify-types.ts'
 import { toTrack } from '../data/catalog.ts'
 import { useCatalog } from '../state/catalog.tsx'
 import { useDesktop } from '../state/desktop.tsx'
@@ -14,72 +22,176 @@ import { Art } from './Art.tsx'
 import { Pill, Segmented } from './Pill.tsx'
 import { TrackList, TrackRow } from './TrackRow.tsx'
 import { Window } from './Window.tsx'
+import { useSearch } from '../lib/useSearch.ts'
 
-// Spotify search once the real catalog is on, demo search otherwise. Waits for a pause in typing.
-function useSearch(q: string) {
-  const { source } = useCatalog()
-  const [found, setFound] = useState<{ q: string; ids: string[] }>({
-    q: '',
-    ids: [],
-  })
-  useEffect(() => {
-    if (source !== 'spotify' || !q) return
-    const ctl = new AbortController()
-    const id = window.setTimeout(() => {
-      fetch(`/api/spotify/search?q=${encodeURIComponent(q)}`, {
-        signal: ctl.signal,
-      })
-        .then((r) =>
-          r.ok ? (r.json() as Promise<{ tracks: OutTrack[] }>) : null,
-        )
-        .then((d) => {
-          if (!d) return
-          const list = d.tracks.map(toTrack)
-          registerTracks(list)
-          setFound({ q, ids: list.map((t) => t.id) })
-        })
-        .catch(() => {})
-    }, 300)
-    return () => {
-      ctl.abort()
-      window.clearTimeout(id)
-    }
-  }, [q, source])
-  if (!q) return { ids: [], loading: false }
-  if (source === 'spotify')
-    return { ids: found.q === q ? found.ids : [], loading: found.q !== q }
-  return {
-    ids: tracks
-      .filter((t) =>
-        `${t.title} ${t.artist} ${t.album}`.toLowerCase().includes(q),
+type SearchTab = 'all' | 'songs' | 'playlists' | 'albums' | 'artists'
+
+// One playlist, album or artist in the results. Opening it loads its songs from Spotify.
+function ResultRow({
+  r,
+  demo,
+  onOpen,
+}: {
+  r: OutResult
+  demo?: Collection
+  onOpen: () => void
+}) {
+  const { openCollection } = useDesktop()
+  const [state, setState] = useState<'idle' | 'loading' | 'blocked'>('idle')
+  const open = async () => {
+    onOpen()
+    if (demo) return openCollection(demo)
+    setState('loading')
+    try {
+      const res = await fetch(
+        `/api/spotify/collection?kind=${r.kind}&id=${encodeURIComponent(r.id)}`,
       )
-      .map((t) => t.id),
-    loading: false,
+      const d = (await res.json()) as { tracks: OutTrack[]; blocked?: boolean }
+      if (d.blocked || !d.tracks.length) return setState('blocked')
+      const list = d.tracks.map(toTrack)
+      registerTracks(list)
+      setState('idle')
+      openCollection({
+        id: `${r.kind}-${r.id}`,
+        kind: r.kind,
+        title: r.title.toLowerCase(),
+        subtitle: r.subtitle.toLowerCase(),
+        art: r.image.startsWith('https://') ? (r.image as ArtKind) : 'art-6',
+        trackIds: list.map((t) => t.id),
+      })
+    } catch {
+      setState('blocked')
+    }
   }
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => void open()}
+        className="flex w-full items-center gap-2.5 px-1.5 py-1 text-left"
+      >
+        <Art
+          size={30}
+          art={
+            demo?.art ??
+            (r.image.startsWith('https://') ? (r.image as ArtKind) : 'art-6')
+          }
+          round={r.kind === 'artist'}
+        />
+        <span className="min-w-0">
+          <span className="block truncate text-ink">
+            {r.title.toLowerCase()}
+          </span>
+          <span className="block truncate text-[11px] text-mute">
+            {state === 'loading'
+              ? 'opening…'
+              : state === 'blocked'
+                ? 'spotify doesn’t let new apps open this one'
+                : r.subtitle.toLowerCase()}
+          </span>
+        </span>
+      </button>
+    </li>
+  )
 }
 
 export function SearchWindow({ query }: { query: string }) {
   const q = query.trim().toLowerCase()
-  const { ids, loading } = useSearch(q)
+  const found = useSearch(q)
+  const { ids, playlists, albums, artists, loading } = found
+  const demo = 'demo' in found ? found.demo : undefined
+  const { playRadio } = usePlayer()
+  const [tab, setTab] = useState<SearchTab>('all')
+  const save = () => recentSearches.add(q)
+  const groups = [
+    { key: 'playlists', label: 'playlists', list: playlists },
+    { key: 'albums', label: 'albums', list: albums },
+    { key: 'artists', label: 'artists', list: artists },
+  ] as const
+  const total = ids.length + playlists.length + albums.length + artists.length
+  const songs = tab === 'all' ? ids.slice(0, 4) : ids.slice(0, 10)
   return (
     <Window
       id="search"
       title={q ? `search — ${q}` : 'search'}
-      width={380}
-      height={420}
+      width={420}
+      height={480}
     >
       {!q && (
         <p className="text-mute">type in the search box at the top right ↗</p>
       )}
+      {q && (
+        <div className="mb-2.5">
+          <Segmented
+            label="show"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: 'all', label: 'all' },
+              { value: 'songs', label: 'songs' },
+              { value: 'playlists', label: 'playlists' },
+              { value: 'albums', label: 'albums' },
+              { value: 'artists', label: 'artists' },
+            ]}
+          />
+        </div>
+      )}
       {q && loading && <p className="text-mute">searching…</p>}
-      {q && !loading && ids.length === 0 && (
+      {q && !loading && total === 0 && (
         <p className="text-mute">nothing for “{query}” (っ˘̩╭╮˘̩)っ</p>
       )}
-      <TrackList label="search results">
-        {ids.slice(0, 10).map((id) => (
-          <TrackRow key={id} id={id} />
-        ))}
-      </TrackList>
+      {(tab === 'all' || tab === 'songs') && songs.length > 0 && (
+        <section className="mb-3">
+          {tab === 'all' && (
+            <h3 className="mb-1 text-[11px] text-mute">songs</h3>
+          )}
+          <TrackList label="songs">
+            {songs.map((id) => (
+              <TrackRow
+                key={id}
+                id={id}
+                onPlay={() => {
+                  save()
+                  playRadio(id)
+                }}
+              />
+            ))}
+          </TrackList>
+        </section>
+      )}
+      {groups.map(
+        (g) =>
+          (tab === 'all' || tab === g.key) &&
+          g.list.length > 0 && (
+            <section key={g.key} className="mb-3">
+              {tab === 'all' && (
+                <h3 className="mb-1 text-[11px] text-mute">{g.label}</h3>
+              )}
+              <ul
+                aria-label={g.label}
+                className="flex flex-col [&>li:nth-child(even)]:bg-stripe"
+              >
+                {(tab === 'all' ? g.list.slice(0, 4) : g.list).map((r) => (
+                  <ResultRow
+                    key={r.id}
+                    r={r}
+                    demo={demo?.find((c) => c.id === r.id)}
+                    onOpen={save}
+                  />
+                ))}
+              </ul>
+            </section>
+          ),
+      )}
+      {q &&
+        !loading &&
+        total > 0 &&
+        tab !== 'all' &&
+        (tab === 'songs' ? ids : found[tab]).length === 0 && (
+          <p className="text-mute">
+            no {tab} for “{query}”
+          </p>
+        )}
     </Window>
   )
 }
@@ -223,8 +335,41 @@ export function LibraryWindow() {
     libraryTab: tab,
     setLibraryTab,
   } = usePlaylists()
-  const { show } = useDesktop()
+  const { show, openCollection } = useDesktop()
+  const { spotifyPlaylists } = useCatalog()
+  const owner = useIsOwner()
   const [setToast, toast] = useUndo()
+  // Visitors hide a Spotify playlist in their browser. lea's browser deletes it on Spotify too
+  // (Spotify calls it unfollowing, so undo follows it again).
+  const deleteSpotify = (c: Collection) => {
+    const unhide = hiddenPlaylists.hide(c.id)
+    if (!owner)
+      return setToast({
+        text: `deleted ${c.title} from stimbox · still on spotify`,
+        undo: unhide,
+      })
+    const url = `/api/spotify/playlist?id=${c.id.replace(/^pl-/, '')}`
+    const done = ownerFetch(url, { method: 'DELETE' })
+      .then((r) => r.ok)
+      .catch(() => false)
+    void done.then(
+      (ok) =>
+        !ok &&
+        setToast({
+          text: `spotify didn’t delete ${c.title} · hidden here only`,
+          undo: unhide,
+        }),
+    )
+    setToast({
+      text: `deleted ${c.title} from spotify`,
+      undo: () => {
+        unhide()
+        void done.then((ok) => {
+          if (ok) void ownerFetch(url, { method: 'PUT' }).catch(() => {})
+        })
+      },
+    })
+  }
 
   const lists = {
     loved: { ids: loved, toggle: toggleLove },
@@ -249,7 +394,10 @@ export function LibraryWindow() {
             { value: 'loved', label: `loved (${loved.size})` },
             { value: 'liked', label: `liked (${liked.size})` },
             { value: 'disliked', label: `disliked (${disliked.size})` },
-            { value: 'playlists', label: `playlists (${playlists.length})` },
+            {
+              value: 'playlists',
+              label: `playlists (${playlists.length + spotifyPlaylists.length})`,
+            },
           ]}
         />
       </div>
@@ -262,6 +410,39 @@ export function LibraryWindow() {
               + new playlist
             </Pill>
           </div>
+          {spotifyPlaylists.length > 0 && (
+            <>
+              <ul
+                aria-label="your playlists on spotify"
+                className="mb-3 flex flex-col [&>li:nth-child(even)]:bg-stripe"
+              >
+                {spotifyPlaylists.map((c) => (
+                  <li key={c.id} className="flex items-center gap-2 pr-1.5">
+                    <button
+                      type="button"
+                      onClick={() => openCollection(c)}
+                      className="flex min-w-0 flex-1 items-center gap-2.5 px-1.5 py-1.5 text-left"
+                    >
+                      <Art art={c.art} size={36} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-ink">
+                          {c.title}
+                        </span>
+                        <span className="block truncate text-[11px] text-mute">
+                          on spotify · {c.trackIds.length} songs
+                        </span>
+                      </span>
+                    </button>
+                    <RemoveButton
+                      label={`delete playlist ${c.title}`}
+                      onClick={() => deleteSpotify(c)}
+                    />
+                  </li>
+                ))}
+              </ul>
+              <p className="mb-1.5 text-[11px] text-mute">made here</p>
+            </>
+          )}
           {playlists.length === 0 && (
             <p className="text-mute">
               no playlists yet. make one, then add songs with the + on any song.
@@ -469,7 +650,7 @@ export function NewPlaylistWindow() {
 
 // Opened from "more" on listen again: everything played lately, songs and playlists or albums.
 export function RecentWindow() {
-  const { playQueue } = usePlayer()
+  const { openCollection } = useDesktop()
   const { recentSongs, recentCollections } = useCatalog()
   const [tab, setTab] = useState<'songs' | 'collections'>('songs')
   return (
@@ -508,8 +689,8 @@ export function RecentWindow() {
             <li key={c.id}>
               <button
                 type="button"
-                onClick={() => playQueue(c.trackIds)}
-                aria-label={`play ${c.title}`}
+                onClick={() => openCollection(c)}
+                aria-label={`open ${c.title}`}
                 className="flex w-full items-center gap-2.5 px-1.5 py-1 text-left"
               >
                 <Art art={c.art} size={40} />

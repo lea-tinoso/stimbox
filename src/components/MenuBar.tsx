@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
+import { SearchBox } from './SearchBox.tsx'
 
 function useClock() {
   const [now, setNow] = useState(() => new Date())
@@ -70,23 +71,7 @@ export function MenuBar({
         tidy desktop
       </button>
       <div className="ml-auto flex items-center gap-3">
-        <label className="hidden md:block">
-          <span className="sr-only">search songs, artists, albums</span>
-          <input
-            type="search"
-            name="q"
-            autoComplete="off"
-            spellCheck={false}
-            value={query}
-            onChange={(e) => {
-              onQuery(e.target.value)
-              show('search')
-            }}
-            onFocus={() => show('search')}
-            placeholder="⌕ search songs, artists, albums…"
-            className="h-[18px] w-56 rounded-pill border border-hairline bg-window px-2 text-[11px] shadow-[inset_0_1px_2px_rgb(0_0_0/0.25)] placeholder:text-mute"
-          />
-        </label>
+        <SearchBox query={query} onQuery={onQuery} />
         <button
           type="button"
           onClick={() => show('nowplaying')}

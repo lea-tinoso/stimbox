@@ -8,6 +8,8 @@ import {
 } from 'react'
 import { DEMO, fromSpotify, type Catalog } from '../data/catalog.ts'
 import type { HomeData } from '../data/spotify-types.ts'
+import { useHiddenPlaylists } from '../lib/hiddenPlaylists.ts'
+import { useSpotifyAdds } from '../lib/spotifyAdds.ts'
 
 // Starts as the demo data, then switches to lea's real Spotify music when /api/spotify/home
 // answers (it only does on Vercel, once the Spotify env vars are set).
@@ -25,7 +27,34 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       })
     return () => ctl.abort()
   }, [])
-  const value = useMemo(() => (data ? fromSpotify(data) : DEMO), [data])
+  const hidden = useHiddenPlaylists()
+  const adds = useSpotifyAdds()
+  const full = useMemo(() => (data ? fromSpotify(data) : DEMO), [data])
+  // Playlists deleted from stimbox disappear everywhere they'd show.
+  const value = useMemo(() => {
+    if (!hidden.length && !Object.keys(adds).length) return full
+    const keep = <T extends { id: string; trackIds: string[] }>(list: T[]) =>
+      list
+        .filter((c) => !hidden.includes(c.id))
+        .map((c) =>
+          adds[c.id]?.some((id) => !c.trackIds.includes(id))
+            ? {
+                ...c,
+                trackIds: [
+                  ...c.trackIds,
+                  ...adds[c.id].filter((id) => !c.trackIds.includes(id)),
+                ],
+              }
+            : c,
+        )
+    return {
+      ...full,
+      listenAgain: keep(full.listenAgain),
+      recentCollections: keep(full.recentCollections),
+      forYouPlaylists: keep(full.forYouPlaylists),
+      spotifyPlaylists: keep(full.spotifyPlaylists),
+    }
+  }, [full, hidden, adds])
   return <CatalogContext value={value}>{children}</CatalogContext>
 }
 

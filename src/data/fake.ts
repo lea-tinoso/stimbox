@@ -15,6 +15,7 @@ export type Track = {
   duration: number // seconds
   // Spotify track URI. Demo songs have none and play as chiptune.
   uri?: string
+  albumId?: string
 }
 
 export type LyricLine = { at: number; text: string }
@@ -22,10 +23,12 @@ export type LyricLine = { at: number; text: string }
 export type Collection = {
   id: string
   title: string
-  kind: 'playlist' | 'album'
+  kind: 'playlist' | 'album' | 'artist'
   subtitle: string
   art: Art
   trackIds: string[]
+  // lea's own Spotify playlist: she can add songs to it
+  owned?: boolean
 }
 
 export type ChartEntry = { trackId: string; move: number | 'new' }

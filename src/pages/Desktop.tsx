@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AboutWindow, TerminalWindow } from '../components/AboutWindows.tsx'
+import { CollectionWindow } from '../components/CollectionWindow.tsx'
+import { ArtistWindow, SongWindow } from '../components/DetailWindows.tsx'
 import { DesktopClutter } from '../components/DesktopClutter.tsx'
 import { Dock } from '../components/Dock.tsx'
 import {
@@ -17,9 +19,11 @@ import {
 } from '../components/LibraryWindows.tsx'
 import { MenuBar } from '../components/MenuBar.tsx'
 import { NowPlayingWindow } from '../components/NowPlayingWindow.tsx'
+import { SpotifyEmbedHost } from '../components/SpotifyEmbedHost.tsx'
 import { Signature } from '../components/Signature.tsx'
 import { Wallpaper } from '../components/Wallpaper.tsx'
-import { useCompact } from '../lib/useMedia.ts'
+import { useCompact, usePhone } from '../lib/useMedia.ts'
+import { PhoneIPod } from '../components/PhoneIPod.tsx'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 
@@ -51,8 +55,32 @@ function useShortcuts() {
 export default function Desktop() {
   const [query, setQuery] = useState('')
   const compact = useCompact()
+  const phone = usePhone()
   useShortcuts()
 
+  // Spotify's player stays in the same place in both layouts: if it were rebuilt when the
+  // window crosses the phone width, the song would stop.
+  return (
+    <>
+      {phone ? (
+        <PhoneIPod />
+      ) : (
+        <DesktopLayout query={query} onQuery={setQuery} compact={compact} />
+      )}
+      <SpotifyEmbedHost />
+    </>
+  )
+}
+
+function DesktopLayout({
+  query,
+  onQuery: setQuery,
+  compact,
+}: {
+  query: string
+  onQuery: (q: string) => void
+  compact: boolean
+}) {
   return (
     <div className="relative h-full overflow-hidden bg-desk">
       <Wallpaper />
@@ -76,6 +104,9 @@ export default function Desktop() {
         <LibraryWindow />
         <RecentWindow />
         <NewPlaylistWindow />
+        <CollectionWindow />
+        <SongWindow />
+        <ArtistWindow />
         <AboutWindow />
         <TerminalWindow />
         <NowPlayingWindow />

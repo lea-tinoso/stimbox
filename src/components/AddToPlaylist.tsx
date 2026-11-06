@@ -1,17 +1,52 @@
 import { useEffect, useRef, useState } from 'react'
 import { getTrack } from '../data/fake.ts'
+import { ownerFetch, useIsOwner } from '../lib/owner.ts'
+import { spotifyAdds } from '../lib/spotifyAdds.ts'
+import { useCatalog } from '../state/catalog.tsx'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlaylists } from '../state/playlists.tsx'
 
 // "+" on a song row: a small Aqua menu of your playlists, plus "new playlist…".
 // The menu is fixed to the viewport so window bodies that scroll don't clip it.
-export function AddToPlaylist({ id }: { id: string }) {
+export function AddToPlaylist({
+  id,
+  pill = false,
+}: {
+  id: string
+  // A bigger Aqua pill with a playlist icon, for the now playing window.
+  pill?: boolean
+}) {
   const { playlists, addTrack, setPendingTrack } = usePlaylists()
   const { show } = useDesktop()
   const [at, setAt] = useState<{ x: number; y: number } | null>(null)
   const button = useRef<HTMLButtonElement>(null)
   const menu = useRef<HTMLDivElement>(null)
-  const title = getTrack(id).title
+  const track = getTrack(id)
+  const title = track.title
+  // lea's own Spotify playlists, when this is her browser and the song is from Spotify.
+  const owner = useIsOwner()
+  const { spotifyPlaylists } = useCatalog()
+  const mine = owner && track.uri ? spotifyPlaylists.filter((p) => p.owned) : []
+  const [failed, setFailed] = useState('')
+  const addToSpotify = (collectionId: string, name: string) => {
+    const undo = spotifyAdds.add(collectionId, id)
+    setAt(null)
+    void ownerFetch('/api/spotify/playlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        playlist: collectionId.replace(/^pl-/, ''),
+        uri: track.uri,
+      }),
+    })
+      .then((r) => r.ok)
+      .catch(() => false)
+      .then((ok) => {
+        if (ok) return
+        undo()
+        setFailed(`couldn’t add to ${name}`)
+      })
+  }
 
   useEffect(() => {
     if (!at) return
@@ -40,6 +75,7 @@ export function AddToPlaylist({ id }: { id: string }) {
     const x = Math.min(r.right - 200, window.innerWidth - 210)
     const below = r.bottom + 4
     const y = below + 200 > window.innerHeight ? r.top - 4 - 200 : below
+    setFailed('')
     setAt(at ? null : { x: Math.max(8, x), y: Math.max(28, y) })
   }
 
@@ -52,10 +88,37 @@ export function AddToPlaylist({ id }: { id: string }) {
         aria-label={`add ${title} to a playlist`}
         aria-haspopup="menu"
         aria-expanded={!!at}
-        className="grid size-6 place-items-center rounded-full text-[15px] text-mute hover:text-aqua-deep"
+        title={pill ? 'add to playlist' : undefined}
+        className={
+          pill
+            ? 'aqua-pill flex items-center gap-1 rounded-pill border border-hairline px-3 py-1 text-[12px] text-ink hover:brightness-95'
+            : 'grid size-6 place-items-center rounded-full text-[15px] text-mute hover:text-aqua-deep'
+        }
       >
-        +
+        {pill ? (
+          <>
+            <svg
+              aria-hidden
+              viewBox="0 0 16 16"
+              className="size-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            >
+              <path d="M2 4h9M2 8h9M2 12h5M12.5 9.5v5M10 12h5" />
+            </svg>
+            <span>add</span>
+          </>
+        ) : (
+          '+'
+        )}
       </button>
+      {failed && (
+        <span role="status" className="text-[10px] text-red">
+          {failed}
+        </span>
+      )}
       {at && (
         <div
           ref={menu}
@@ -67,6 +130,29 @@ export function AddToPlaylist({ id }: { id: string }) {
           <p className="truncate px-3 py-0.5 text-[11px] text-mute">
             add “{title}” to
           </p>
+          {mine.map((p) => {
+            const has = p.trackIds.includes(id)
+            return (
+              <button
+                key={p.id}
+                type="button"
+                role="menuitem"
+                disabled={has}
+                onClick={() => addToSpotify(p.id, p.title)}
+                className="flex w-full items-center gap-2 px-3 py-1 text-left text-ink hover:bg-selection hover:text-window disabled:text-mute disabled:hover:bg-transparent"
+              >
+                <span className="min-w-0 flex-1 truncate">{p.title}</span>
+                {has ? (
+                  <span aria-label="already added">✓</span>
+                ) : (
+                  <span className="text-[10px] opacity-60">spotify</span>
+                )}
+              </button>
+            )
+          })}
+          {mine.length > 0 && playlists.length > 0 && (
+            <hr className="my-1 border-chrome-hi" />
+          )}
           {playlists.map((p) => {
             const has = p.trackIds.includes(id)
             return (
@@ -86,7 +172,9 @@ export function AddToPlaylist({ id }: { id: string }) {
               </button>
             )
           })}
-          {playlists.length > 0 && <hr className="my-1 border-chrome-hi" />}
+          {(playlists.length > 0 || mine.length > 0) && (
+            <hr className="my-1 border-chrome-hi" />
+          )}
           <button
             type="button"
             role="menuitem"

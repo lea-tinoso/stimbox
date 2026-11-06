@@ -96,7 +96,9 @@ class Chiptune {
   private step = 0
   private nextTime = 0
   private songId = ''
-  private volume = 0.08
+  // The volume when sound is on. Never changes: muting is its own flag.
+  private readonly volume = 0.08
+  private muted = false
   // Counted for the stats-for-nerds terminal.
   notesPlayed = 0
   private live = new Set<OscillatorNode>()
@@ -123,7 +125,7 @@ class Chiptune {
           .webkitAudioContext
       this.ctx = new Ctx()
       this.master = this.ctx.createGain()
-      this.master.gain.value = this.volume
+      this.master.gain.value = this.muted ? 0 : this.volume
       this.master.connect(this.ctx.destination)
     }
     return this.ctx
@@ -157,7 +159,9 @@ class Chiptune {
     const song = this.song
     if (!ctx || !song) return
     const sixteenth = 60 / song.bpm / 2
-    while (this.nextTime < ctx.currentTime + 0.12) {
+    // Background tabs run timers about once a second, so schedule further ahead there.
+    const ahead = document.hidden ? 1.5 : 0.12
+    while (this.nextTime < ctx.currentTime + ahead) {
       const i = this.step % song.lead.length
       const n = song.lead[i]
       if (n !== null)
@@ -211,13 +215,13 @@ class Chiptune {
   }
 
   setMuted(muted: boolean) {
+    this.muted = muted
     if (this.master && this.ctx)
       this.master.gain.setTargetAtTime(
         muted ? 0 : this.volume,
         this.ctx.currentTime,
         0.02,
       )
-    this.volume = muted ? 0 : 0.08
   }
 }
 
