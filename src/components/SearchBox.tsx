@@ -71,7 +71,10 @@ export function SearchBox({
             setFocused(true)
             show('search')
           }}
-          onBlur={() => setFocused(false)}
+          onBlur={() => {
+            setFocused(false)
+            recentSearches.add(query)
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') recentSearches.add(query)
             if (e.key === 'Escape') e.currentTarget.blur()

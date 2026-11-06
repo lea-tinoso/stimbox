@@ -18,6 +18,7 @@ import {
 } from '../components/LibraryWindows.tsx'
 import { MenuBar } from '../components/MenuBar.tsx'
 import { NowPlayingWindow } from '../components/NowPlayingWindow.tsx'
+import { SpotifyEmbedHost } from '../components/SpotifyEmbedHost.tsx'
 import { Signature } from '../components/Signature.tsx'
 import { Wallpaper } from '../components/Wallpaper.tsx'
 import { useCompact } from '../lib/useMedia.ts'
@@ -84,6 +85,7 @@ export default function Desktop() {
         {!compact && <IPod />}
       </main>
       <Dock />
+      <SpotifyEmbedHost />
     </div>
   )
 }
