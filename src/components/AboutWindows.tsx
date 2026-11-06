@@ -10,7 +10,7 @@ const SPECS: [string, string][] = [
   ['processor', 'React 19.3 · TypeScript 6'],
   ['graphics', 'Tailwind CSS 4.3 · Aqua tokens'],
   ['build tool', 'Vite 8'],
-  ['music', 'Spotify Web API · Playback SDK'],
+  ['music', 'Spotify Web API · embed player · Last.fm API'],
   ['startup disk', 'Vercel'],
   ['built with', 'lea + Claude Code, 3 hyperfixations ago'],
 ]
