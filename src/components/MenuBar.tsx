@@ -39,6 +39,13 @@ export function MenuBar({
       >
         library
       </button>
+      <button
+        type="button"
+        className="hidden sm:block"
+        onClick={() => show('newplaylist')}
+      >
+        + new playlist
+      </button>
       <button type="button" className="hidden sm:block" onClick={toggle}>
         {playing ? 'pause' : 'play'}
       </button>

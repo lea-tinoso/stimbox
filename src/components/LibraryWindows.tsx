@@ -351,6 +351,7 @@ export function NewPlaylistWindow() {
           <input
             name="title"
             required
+            autoFocus
             maxLength={100}
             autoComplete="off"
             value={title}
