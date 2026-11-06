@@ -10,7 +10,7 @@ import {
 } from '../_tracks.js'
 
 // Search for the menu bar search box: songs, playlists, albums and artists, like Spotify's own.
-// New Spotify apps get at most 10 results of each kind.
+// New Spotify apps get at most 10 results of each kind per call.
 type Named = {
   id: string
   name: string
@@ -34,6 +34,14 @@ export async function GET(request: Request) {
     `/search?type=track,playlist,album,artist&limit=10&q=${encodeURIComponent(q)}`,
   )
   if (!res) return json(empty)
+  // New apps get 10 per call, so fetch two more pages of songs.
+  const more = await Promise.all(
+    [10, 20].map((offset) =>
+      spotify<{ tracks?: Paged<SpotifyTrack | null> }>(
+        `/search?type=track&limit=10&offset=${offset}&q=${encodeURIComponent(q)}`,
+      ),
+    ),
+  )
   const results = (
     kind: OutResult['kind'],
     list: (Named | null)[] = [],
@@ -48,7 +56,11 @@ export async function GET(request: Request) {
     }))
   return json(
     {
-      tracks: present((res.tracks?.items ?? []).map((t) => toOut(t))),
+      tracks: present(
+        [res, ...more]
+          .flatMap((r) => r?.tracks?.items ?? [])
+          .map((t) => toOut(t)),
+      ).filter((t, i, all) => all.findIndex((x) => x.id === t.id) === i),
       playlists: results('playlist', res.playlists?.items, (n) =>
         n.owner?.display_name
           ? `playlist · ${n.owner.display_name}`

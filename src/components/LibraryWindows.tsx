@@ -167,7 +167,7 @@ export function SearchWindow({ query }: { query: string }) {
   const found = useSearch(q)
   const { ids, playlists, albums, artists, loading } = found
   const demo = 'demo' in found ? found.demo : undefined
-  const { playTrack } = usePlayer()
+  const { playRadio } = usePlayer()
   const [tab, setTab] = useState<SearchTab>('all')
   const save = () => recentSearches.add(q)
   const groups = [
@@ -219,7 +219,7 @@ export function SearchWindow({ query }: { query: string }) {
                 id={id}
                 onPlay={() => {
                   save()
-                  playTrack(id)
+                  playRadio(id)
                 }}
               />
             ))}

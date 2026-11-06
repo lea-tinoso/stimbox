@@ -8,7 +8,9 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { demoIds, getTrack, type Track } from '../data/fake.ts'
+import { demoIds, getTrack, registerTracks, type Track } from '../data/fake.ts'
+import { toTrack } from '../data/catalog.ts'
+import type { OutTrack } from '../data/spotify-types.ts'
 import { chiptune } from '../lib/chiptune.ts'
 import { spotifyEmbed } from '../lib/spotifyEmbed.ts'
 import { useCatalog } from './catalog.tsx'
@@ -37,6 +39,9 @@ type PlayerApi = {
   disliked: Set<string>
   playQueue: (ids: string[], start?: number) => void
   playTrack: (id: string) => void
+  // Play a song, then keep going with similar songs (a song picked from search).
+  playRadio: (id: string) => void
+  radio: boolean
   toggle: () => void
   next: () => void
   prev: () => void
@@ -209,7 +214,56 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     })
   }, [track.uri])
 
+  // Radio: after a song from search, keep adding similar songs before the queue runs out.
+  const [radio, setRadio] = useState<{ seed: string; page: number } | null>(
+    null,
+  )
+  const radioBusy = useRef(false)
+  useEffect(() => {
+    if (!radio || radioBusy.current || index < queue.length - 2) return
+    const seed = getTrack(radio.seed)
+    if (!seed.uri) return
+    radioBusy.current = true
+    const ctl = new AbortController()
+    const qs = new URLSearchParams({
+      track: seed.title,
+      artist: seed.artist,
+      page: String(radio.page),
+    })
+    fetch(`/api/spotify/radio?${qs}`, { signal: ctl.signal })
+      .then((r) =>
+        r.ok ? (r.json() as Promise<{ tracks: OutTrack[] }>) : null,
+      )
+      .then((d) => {
+        const list = (d?.tracks ?? []).map(toTrack)
+        registerTracks(list)
+        const fresh = list.map((t) => t.id).filter((id) => !queue.includes(id))
+        if (fresh.length) {
+          setQueue((q) => [...q, ...fresh.filter((id) => !q.includes(id))])
+          setRadio({ seed: radio.seed, page: radio.page + 1 })
+        } else if (radio.page < 4) setRadio({ ...radio, page: radio.page + 1 })
+        else setRadio(null)
+      })
+      .catch(() => {})
+      .finally(() => {
+        radioBusy.current = false
+      })
+    return () => {
+      ctl.abort()
+      radioBusy.current = false
+    }
+  }, [radio, index, queue])
+
+  const playRadio = useCallback((id: string) => {
+    setQueue([id])
+    setIndex(0)
+    setPosition(0)
+    setPlaying(true)
+    setRadio({ seed: id, page: 0 })
+  }, [])
+
   const playQueue = useCallback((ids: string[], start = 0) => {
+    setRadio(null)
     setQueue(ids)
     setIndex(start)
     setPosition(0)
@@ -285,6 +339,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       disliked,
       playQueue,
       playTrack,
+      playRadio,
+      radio: radio !== null,
       toggle: () => setPlaying((p) => !p),
       next: () => step(1),
       prev: () => (position > 3 ? setPosition(0) : step(-1)),
@@ -317,6 +373,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       disliked,
       playQueue,
       playTrack,
+      playRadio,
+      radio,
       step,
       toggleLike,
       toggleLove,
