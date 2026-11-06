@@ -40,15 +40,6 @@ export function Signature() {
           >
             nerdstats
           </button>
-          <span aria-hidden> · </span>
-          <a
-            href="https://lea-showcase.vercel.app"
-            target="_blank"
-            rel="noreferrer"
-            className="text-aqua-deep underline hover:text-selection"
-          >
-            portfolio ↗
-          </a>
         </p>
       </div>
     </aside>

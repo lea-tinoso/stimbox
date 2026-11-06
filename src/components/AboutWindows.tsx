@@ -51,17 +51,7 @@ export function AboutWindow() {
           </div>
         ))}
       </dl>
-      <div className="mt-3 mb-2 text-center">
-        <a
-          href="https://github.com/lea-tinoso/stimbox#readme"
-          target="_blank"
-          rel="noreferrer"
-          className="aqua-pill inline-block rounded-pill border border-hairline px-3 py-0.5 text-[11px] text-ink"
-        >
-          more info…
-        </a>
-      </div>
-      <p className="text-center text-[9px] text-mute">
+      <p className="mt-3 text-center text-[9px] text-mute">
         ™ &amp; © 2026 lea. made with too many replays.
       </p>
     </Window>
