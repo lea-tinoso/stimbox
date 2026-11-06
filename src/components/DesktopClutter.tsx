@@ -26,7 +26,7 @@ function FolderIcon({ pink = false }: { pink?: boolean }) {
 }
 
 export function DesktopClutter() {
-  const { show } = useDesktop()
+  const { show, toIpod } = useDesktop()
   const { loved, liked } = usePlayer()
   const folders = [
     { label: 'library', pink: false },
@@ -48,6 +48,21 @@ export function DesktopClutter() {
             <span className="rounded-sm bg-window/70 px-1">{f.label}</span>
           </button>
         ))}
+        <button
+          type="button"
+          onClick={toIpod}
+          aria-label="bring back the ipod"
+          className="w-24 text-center text-[11px] text-body"
+        >
+          <img
+            src="/icons/ipod.png"
+            alt=""
+            width={44}
+            height={44}
+            className="mx-auto mb-0.5 drop-shadow-[0_2px_2px_rgb(0_0_0/0.3)]"
+          />
+          <span className="rounded-sm bg-window/70 px-1">ipod</span>
+        </button>
       </div>
       <div
         aria-hidden
@@ -55,7 +70,7 @@ export function DesktopClutter() {
       >
         <TypingBubble
           text="memory: every lyric from 2009. not why i walked into this room"
-          className="absolute top-[282px] right-[22px] w-[248px] rotate-[-2deg]"
+          className="absolute top-[132px] right-[112px] w-[150px] rotate-[-2deg]"
         />
         <img
           src="/kitten.jpg"

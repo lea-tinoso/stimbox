@@ -31,7 +31,7 @@ export function TypingBubble({
 
   const visible = still ? text : text.slice(0, shown)
   return (
-    <div className={`aqua-bubble isolate px-4 py-2.5 ${className}`}>
+    <div className={`aqua-bubble isolate px-3 py-2 ${className}`}>
       <svg
         aria-hidden
         viewBox="0 0 16 16"
@@ -41,7 +41,7 @@ export function TypingBubble({
       >
         <path d="M1 1 C 3 9 7 13 15 15 C 9 15.5 4 14 0.5 11" />
       </svg>
-      <p className="relative text-[14px] leading-snug text-ink">
+      <p className="relative text-[13px] leading-snug text-ink">
         {visible}
         {!still && (
           <span

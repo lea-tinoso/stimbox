@@ -10,6 +10,7 @@ import {
 import { IPod } from '../components/IPod.tsx'
 import {
   LibraryWindow,
+  NewPlaylistWindow,
   RecentWindow,
   SearchWindow,
 } from '../components/LibraryWindows.tsx'
@@ -68,6 +69,7 @@ export default function Desktop() {
         <SearchWindow query={query} />
         <LibraryWindow />
         <RecentWindow />
+        <NewPlaylistWindow />
         <NowPlayingWindow />
         {!compact && <IPod />}
       </main>

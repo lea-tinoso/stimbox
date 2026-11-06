@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { getTrack } from '../data/fake.ts'
 import { usePlayer } from '../state/player.tsx'
+import { AddToPlaylist } from './AddToPlaylist.tsx'
 import { Art } from './Art.tsx'
 
 export function TrackList({
@@ -69,6 +70,7 @@ export function TrackRow({
         </span>
       </button>
       {trailing}
+      <AddToPlaylist id={id} />
       <button
         type="button"
         onClick={() => toggleLove(id)}
