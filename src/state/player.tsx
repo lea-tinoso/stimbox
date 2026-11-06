@@ -237,7 +237,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   )
   const radioBusy = useRef(false)
   useEffect(() => {
-    if (!radio || radioBusy.current || index < queue.length - 2) return
+    // Keep about 10 songs ahead.
+    if (!radio || radioBusy.current || index < queue.length - 10) return
     const seed = getTrack(radio.seed)
     if (!seed.uri) return
     radioBusy.current = true

@@ -1,4 +1,5 @@
 import { CACHE, configured, env, json, spotify } from '../_spotify.js'
+import type { OutTrack } from '../../src/data/spotify-types.ts'
 import { present, toOut, type Paged, type SpotifyTrack } from '../_tracks.js'
 
 // "Keep playing similar songs" after a song picked from search, like YouTube Music's radio.
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
     page * 15,
     page * 15 + 15,
   )
-  let found = present(
+  const fromSimilar = present(
     (
       await Promise.all(
         picks.map((s) =>
@@ -62,13 +63,53 @@ export async function GET(request: Request) {
       )
     ).map((t) => toOut(t)),
   )
-  let source = 'lastfm'
-  if (found.length < 3) {
-    // Same artist, a different page each time.
-    found = present(
-      (await find(`artist:"${artist}"`, 10, page * 10)).map((t) => toOut(t)),
+
+  // Niche songs often have few similar songs on Last.fm, so mix in a few songs each from
+  // similar artists, 5 artists per page.
+  let fromArtists: OutTrack[] = []
+  if (fromSimilar.length < 12) {
+    const like = await lastfm<{
+      similarartists?: { artist?: { name: string }[] }
+    }>({
+      method: 'artist.getsimilar',
+      artist,
+      limit: '25',
+    })
+    const names = (like?.similarartists?.artist ?? [])
+      .slice(page * 5, page * 5 + 5)
+      .map((a) => a.name)
+    const lists = await Promise.all(
+      names.map((n) =>
+        find(`artist:"${n}"`, 3).then((r) => present(r.map((t) => toOut(t)))),
+      ),
     )
-    source = 'artist'
+    // one from each artist in turn, so it doesn't play three in a row from one
+    for (let k = 0; k < 3; k++)
+      for (const l of lists) if (l[k]) fromArtists.push(l[k])
   }
+
+  // A couple from the same artist, for the familiar feel.
+  const own = present(
+    (await find(`artist:"${artist}"`, 3, page * 3)).map((t) => toOut(t)),
+  )
+
+  // Interleave: similar songs, songs by similar artists, then the artist's own.
+  const found: OutTrack[] = []
+  const seen = new Set<string>()
+  const push = (t: OutTrack | undefined) => {
+    if (t && !seen.has(t.id)) {
+      seen.add(t.id)
+      found.push(t)
+    }
+  }
+  const longest = Math.max(fromSimilar.length, fromArtists.length)
+  for (let k = 0; k < longest; k++) {
+    push(fromSimilar[k])
+    push(fromArtists[k])
+    if (k % 4 === 3) push(own.shift())
+  }
+  own.forEach(push)
+  const source =
+    fromSimilar.length || fromArtists.length ? 'lastfm' : 'artist only'
   return json({ tracks: found, source }, { headers: CACHE })
 }
