@@ -24,9 +24,39 @@ export function SpotifyEmbedHost() {
       }
     >
       {stalled && (
-        <p className="mb-2 text-[11px] text-body">
-          your browser wants one tap: press play on spotify’s player ↓
-        </p>
+        <div className="mb-2 flex items-start gap-2">
+          <p className="flex-1 text-[11px] text-body">
+            your browser blocked spotify from starting on its own. press play to
+            start the song.
+          </p>
+          <button
+            type="button"
+            onClick={spotifyEmbed.dismiss}
+            aria-label="close"
+            className="text-[13px] text-mute hover:text-ink"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {stalled && (
+        <div className="mb-2 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void spotifyEmbed.retry()}
+            className="aqua-gel rounded-pill border px-4 py-0.5 text-[12px]"
+          >
+            ▶ play
+          </button>
+          <a
+            href={`https://open.spotify.com/track/${spotifyEmbed.currentUri().split(':').pop()}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] text-aqua-deep underline"
+          >
+            open in spotify ↗
+          </a>
+        </div>
       )}
       <div ref={ref} className="h-20 w-full overflow-hidden rounded-art" />
     </div>

@@ -202,6 +202,18 @@ class SpotifyEmbed {
     }
   }
 
+  // A press of our own play button counts as the tap the browser wants, so try again from it.
+  async retry() {
+    if (!this.uri || !this.controller) return
+    this.watchForStall()
+    const c = await this.controller
+    c.play()
+    this.started = true
+    log('retry play sent', this.uri)
+  }
+  currentUri = () => this.uri
+  dismiss = () => this.setStalled(false)
+
   async pause() {
     this.wanted = false
     this.setStalled(false)
