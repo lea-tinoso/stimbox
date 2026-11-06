@@ -1,7 +1,9 @@
 // Fake data for the MVP. Real songs, artists and albums for realism; the lyrics are original placeholder
 // text written for this app (real lyrics will come from LRCLIB later). Album art is a CSS pattern.
 
-export type Art = `art-${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10}`
+export type Pattern = `art-${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10}`
+// A CSS pattern for demo data, or a Spotify cover image URL.
+export type Art = Pattern | `https://${string}`
 
 export type Track = {
   id: string
@@ -11,6 +13,8 @@ export type Track = {
   year: number
   art: Art
   duration: number // seconds
+  // Spotify track URI. Demo songs have none and play as chiptune.
+  uri?: string
 }
 
 export type LyricLine = { at: number; text: string }
@@ -31,11 +35,13 @@ export type Range = '4w' | '6m' | '1y'
 export type Stats = {
   genres: { name: string; share: number }[]
   hours: number
-  hoursDelta: number
+  hoursDelta?: number
+  // Says where the listening numbers come from when they aren't for the whole range.
+  hoursNote?: string
   byHour: number[] // 12 two-hour buckets, 0-100
   peak: string
   topArtists: { name: string; art: Art }[]
-  onRepeat: { trackId: string; plays: number }[]
+  onRepeat: { trackId: string; plays?: number }[]
   repeatShare: number
 }
 
@@ -122,6 +128,12 @@ export const tracks: Track[] = [
 
 export const trackById = new Map(tracks.map((x) => [x.id, x]))
 export const getTrack = (id: string) => trackById.get(id) ?? tracks[0]
+export const demoIds = new Set(tracks.map((x) => x.id))
+
+// Real songs from Spotify join the same lookup, so every component can keep using getTrack.
+export function registerTracks(list: Track[]) {
+  for (const x of list) trackById.set(x.id, x)
+}
 
 const verses = [
   [

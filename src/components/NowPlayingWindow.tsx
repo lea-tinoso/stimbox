@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { currentLine, fmt, getTrack, lyricsFor } from '../data/fake.ts'
+import { useEffect, useRef, useState } from 'react'
+import { currentLine, fmt, getTrack } from '../data/fake.ts'
+import { useLyrics } from '../lib/lyrics.ts'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 import { Art } from './Art.tsx'
@@ -12,7 +13,8 @@ export function NowPlayingWindow() {
   const p = usePlayer()
   const { toIpod } = useDesktop()
   const [tab, setTab] = useState<'lyrics' | 'next'>('lyrics')
-  const lines = useMemo(() => lyricsFor(p.track), [p.track])
+  const lyrics = useLyrics(p.track)
+  const lines = lyrics.lines
   const cur = currentLine(lines, p.position)
   const curRef = useRef<HTMLLIElement>(null)
 
@@ -49,7 +51,7 @@ export function NowPlayingWindow() {
           <input
             type="range"
             min={0}
-            max={p.track.duration}
+            max={p.length}
             value={p.position}
             onChange={(e) => p.seek(Number(e.target.value))}
             className="w-full accent-aqua"
@@ -57,7 +59,14 @@ export function NowPlayingWindow() {
         </label>
         <p className="flex justify-between text-[13px] tabular-nums">
           <span>{fmt(p.position)}</span>
-          <span>{fmt(p.track.duration)}</span>
+          <span>{fmt(p.length)}</span>
+        </p>
+        <p className="mt-1 text-[11px] text-mute">
+          {p.track.uri
+            ? p.preview
+              ? 'playing a 30-second preview from spotify · log into spotify in this browser for full songs'
+              : 'playing from spotify'
+            : 'demo song · chiptune stand-in'}
         </p>
         <div className="mt-3 flex items-center gap-2">
           <Pill
@@ -144,8 +153,19 @@ export function NowPlayingWindow() {
                 </li>
               ))}
             </ol>
+            {lines.length === 0 && (
+              <p className="text-mute">
+                {lyrics.kind === 'loading'
+                  ? 'looking for lyrics…'
+                  : 'no lyrics for this one. just vibes ♪'}
+              </p>
+            )}
             <p className="mt-2 text-[11px] text-mute">
-              placeholder lyrics · tap a line to jump there
+              {lyrics.kind === 'placeholder'
+                ? 'placeholder lyrics · tap a line to jump there'
+                : lyrics.kind === 'plain'
+                  ? 'lyrics from lrclib · not synced to the song'
+                  : 'lyrics from lrclib · tap a line to jump there'}
             </p>
           </>
         ) : (

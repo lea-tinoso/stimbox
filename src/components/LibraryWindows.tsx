@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
-import {
-  getTrack,
-  recentCollections,
-  recentSongs,
-  tracks,
-} from '../data/fake.ts'
+import { getTrack, registerTracks, tracks } from '../data/fake.ts'
+import type { OutTrack } from '../data/spotify-types.ts'
+import { toTrack } from '../data/catalog.ts'
+import { useCatalog } from '../state/catalog.tsx'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 import {
@@ -17,13 +15,52 @@ import { Pill, Segmented } from './Pill.tsx'
 import { TrackList, TrackRow } from './TrackRow.tsx'
 import { Window } from './Window.tsx'
 
-export function SearchWindow({ query }: { query: string }) {
-  const q = query.trim().toLowerCase()
-  const results = q
-    ? tracks.filter((t) =>
+// Spotify search once the real catalog is on, demo search otherwise. Waits for a pause in typing.
+function useSearch(q: string) {
+  const { source } = useCatalog()
+  const [found, setFound] = useState<{ q: string; ids: string[] }>({
+    q: '',
+    ids: [],
+  })
+  useEffect(() => {
+    if (source !== 'spotify' || !q) return
+    const ctl = new AbortController()
+    const id = window.setTimeout(() => {
+      fetch(`/api/spotify/search?q=${encodeURIComponent(q)}`, {
+        signal: ctl.signal,
+      })
+        .then((r) =>
+          r.ok ? (r.json() as Promise<{ tracks: OutTrack[] }>) : null,
+        )
+        .then((d) => {
+          if (!d) return
+          const list = d.tracks.map(toTrack)
+          registerTracks(list)
+          setFound({ q, ids: list.map((t) => t.id) })
+        })
+        .catch(() => {})
+    }, 300)
+    return () => {
+      ctl.abort()
+      window.clearTimeout(id)
+    }
+  }, [q, source])
+  if (!q) return { ids: [], loading: false }
+  if (source === 'spotify')
+    return { ids: found.q === q ? found.ids : [], loading: found.q !== q }
+  return {
+    ids: tracks
+      .filter((t) =>
         `${t.title} ${t.artist} ${t.album}`.toLowerCase().includes(q),
       )
-    : []
+      .map((t) => t.id),
+    loading: false,
+  }
+}
+
+export function SearchWindow({ query }: { query: string }) {
+  const q = query.trim().toLowerCase()
+  const { ids, loading } = useSearch(q)
   return (
     <Window
       id="search"
@@ -34,12 +71,13 @@ export function SearchWindow({ query }: { query: string }) {
       {!q && (
         <p className="text-mute">type in the search box at the top right ↗</p>
       )}
-      {q && results.length === 0 && (
+      {q && loading && <p className="text-mute">searching…</p>}
+      {q && !loading && ids.length === 0 && (
         <p className="text-mute">nothing for “{query}” (っ˘̩╭╮˘̩)っ</p>
       )}
       <TrackList label="search results">
-        {results.slice(0, 10).map((t) => (
-          <TrackRow key={t.id} id={t.id} />
+        {ids.slice(0, 10).map((id) => (
+          <TrackRow key={id} id={id} />
         ))}
       </TrackList>
     </Window>
@@ -432,6 +470,7 @@ export function NewPlaylistWindow() {
 // Opened from "more" on listen again: everything played lately, songs and playlists or albums.
 export function RecentWindow() {
   const { playQueue } = usePlayer()
+  const { recentSongs, recentCollections } = useCatalog()
   const [tab, setTab] = useState<'songs' | 'collections'>('songs')
   return (
     <Window id="recent" title="recently played" width={420} height={480}>

@@ -145,7 +145,7 @@ function Row({ k, v, extra }: { k: string; v: string; extra?: string }) {
 // Stats for nerds, opened from the terminal icon on the desktop or "nerdstats" on the sticky.
 export function TerminalWindow() {
   const { open } = useDesktop()
-  const { track, position, playing, repeat, shuffle } = usePlayer()
+  const { track, position, playing, repeat, shuffle, length } = usePlayer()
   const active = open.has('terminal')
   const fps = useFps(active)
   const uptime = useTick(active)
@@ -160,9 +160,7 @@ export function TerminalWindow() {
       height={410}
       bodyClassName="bg-term font-mono text-[11px] leading-[1.65] text-term-ink"
     >
-      <p className="text-term-dim">
-        Last login: {LOGIN} on ttys000
-      </p>
+      <p className="text-term-dim">Last login: {LOGIN} on ttys000</p>
       <p>
         <span className="text-term-green">lea@stimbox ~ %</span> stimbox
         --stats-for-nerds
@@ -174,8 +172,8 @@ export function TerminalWindow() {
         <Row k="frames / sec" v={String(fps)} extra={bar(fps / 60)} />
         <Row
           k="now playing"
-          v={`${track.title} ${time(position)}/${time(track.duration)}`}
-          extra={bar(position / track.duration)}
+          v={`${track.title} ${time(position)}/${time(length)}`}
+          extra={bar(position / length)}
         />
         <Row
           k="tempo · key"
