@@ -7,7 +7,7 @@ const items: { icon: string; label: string; opens: WinId[] }[] = [
     label: 'home',
     opens: ['listen', 'foryou', 'trending', 'stats'],
   },
-  { icon: 'ipod', label: 'ipod', opens: ['ipod'] },
+  { icon: 'ipod', label: 'now playing', opens: ['nowplaying'] },
   { icon: 'minesweeper', label: 'search', opens: ['search'] },
   { icon: 'karaoke', label: 'lyrics', opens: ['nowplaying'] },
   { icon: 'dashboard', label: 'your algorithm', opens: ['stats'] },

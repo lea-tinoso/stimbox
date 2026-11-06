@@ -10,6 +10,8 @@ type Props = {
   height?: number
   children: ReactNode
   bodyClassName?: string
+  // Red light. Defaults to closing the window into the dock.
+  onClose?: () => void
   // Yellow light. Defaults to closing the window into the dock.
   onMinimize?: () => void
   // Green light. Without it the light is decoration, as on a window that can't grow.
@@ -23,6 +25,7 @@ export function Window({
   height,
   children,
   bodyClassName = '',
+  onClose,
   onMinimize,
   onZoom,
 }: Props) {
@@ -55,7 +58,7 @@ export function Window({
           <button
             type="button"
             aria-label={`close ${title}`}
-            onClick={() => hide(id)}
+            onClick={onClose ?? (() => hide(id))}
             className={`light size-[13px] rounded-full ${active ? 'text-light-red' : 'text-chrome-lo'}`}
           />
           <button

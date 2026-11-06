@@ -7,11 +7,11 @@ import { usePlayer } from '../state/player.tsx'
 import { Art } from './Art.tsx'
 import { Reactions } from './Reactions.tsx'
 
-// The small player. Drag it by its body. Red and yellow put it away in the dock; green, the screen
-// and menu swap it for the big now playing window (and its yellow light swaps back).
+// The small player. Drag it by its body. The screen and menu swap it for the big now playing
+// window, whose yellow light swaps back.
 export function IPod() {
   const p = usePlayer()
-  const { pos, open, zOf, show, hide, toBigPlayer } = useDesktop()
+  const { pos, open, zOf, show, toBigPlayer } = useDesktop()
   const drag = useDrag('ipod')
   const compact = useCompact()
   const zoom = compact ? () => show('nowplaying') : toBigPlayer
@@ -36,28 +36,6 @@ export function IPod() {
           : { left: pos.ipod.x, top: pos.ipod.y, zIndex: zOf('ipod') }
       }
     >
-      {!compact && (
-        <div className="mb-2 flex gap-1.5 self-start">
-          <button
-            type="button"
-            aria-label="close ipod"
-            onClick={() => hide('ipod')}
-            className="light size-[11px] rounded-full text-light-red"
-          />
-          <button
-            type="button"
-            aria-label="minimize ipod"
-            onClick={() => hide('ipod')}
-            className="light size-[11px] rounded-full text-light-yellow"
-          />
-          <button
-            type="button"
-            aria-label="zoom to now playing and lyrics"
-            onClick={toBigPlayer}
-            className="light size-[11px] rounded-full text-light-green"
-          />
-        </div>
-      )}
       <button
         type="button"
         onClick={zoom}

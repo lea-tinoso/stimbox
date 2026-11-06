@@ -28,6 +28,7 @@ export function NowPlayingWindow() {
       title={`now playing — ${p.track.title}`}
       width={1040}
       height={740}
+      onClose={toIpod}
       onMinimize={toIpod}
       bodyClassName="!p-6 flex gap-7 max-[900px]:flex-col max-[900px]:!p-3"
     >
