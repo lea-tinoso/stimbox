@@ -148,7 +148,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (track.uri) {
       chiptune.pause()
       if (playing) void spotifyEmbed.play(track.uri)
-      else void spotifyEmbed.pause()
+      else {
+        void spotifyEmbed.pause()
+        void spotifyEmbed.cue(track.uri)
+      }
     } else {
       void spotifyEmbed.pause()
       if (playing) chiptune.play(track.id)

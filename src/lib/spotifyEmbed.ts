@@ -38,6 +38,9 @@ const SCRIPT = 'https://open.spotify.com/embed/iframe-api/v1'
 // How long to wait for Spotify to report playback before asking for a tap.
 const STALL_MS = 4000
 
+// Shows in the browser console, to see where playback stops.
+const log = (...args: unknown[]) => console.info('[stimbox spotify]', ...args)
+
 class SpotifyEmbed {
   private api: Promise<IFrameApi> | null = null
   private controller: Promise<Controller> | null = null
@@ -50,6 +53,7 @@ class SpotifyEmbed {
   private stallTimer: number | null = null
   private stalled = false
   private stallSubs = new Set<() => void>()
+  private started = false
 
   constructor() {
     this.host = new Promise((resolve) => (this.setHostEl = resolve))
@@ -72,7 +76,13 @@ class SpotifyEmbed {
       const s = document.createElement('script')
       s.src = SCRIPT
       s.async = true
-      s.onerror = reject
+      s.onerror = (e) => {
+        // Let the next press of play try again.
+        this.api = null
+        this.controller = null
+        this.uri = ''
+        reject(e)
+      }
       document.body.append(s)
     })
     return this.api
@@ -85,24 +95,36 @@ class SpotifyEmbed {
           const el = document.createElement('div')
           host.append(el)
           this.expectReady()
+          log('creating player')
           api.createController(el, { uri, width: '100%', height: 80 }, (c) => {
-            c.addListener('ready', () => this.markReady())
+            c.addListener('ready', () => {
+              log('player ready')
+              this.markReady()
+            })
             c.addListener('playback_update', (e) => {
               if (!e.data.isPaused) this.setStalled(false)
               this.listeners.forEach((fn) => fn(e.data))
             })
-            // Let the player start sound after a click on our page.
+            // Chromium only lets a cross-origin player start sound if the iframe was LOADED with
+            // allow="autoplay". Adding it later does nothing, so reload the frame once with it.
             const frame = host.querySelector('iframe')
             const allow = frame?.getAttribute('allow') ?? ''
-            if (frame && !allow.includes('autoplay'))
+            log('iframe allow =', allow || '(none)')
+            if (frame && !allow.includes('autoplay')) {
               frame.setAttribute(
                 'allow',
                 `autoplay; encrypted-media; ${allow}`.trim(),
               )
+              this.expectReady()
+              const src = frame.src
+              frame.src = src
+              log('reloaded iframe with autoplay')
+            }
             resolve(c)
           })
         }),
     )
+    this.uri ||= uri
     return this.controller
   }
 
@@ -135,19 +157,41 @@ class SpotifyEmbed {
     }
   }
 
-  async play(uri: string) {
-    const fresh = !this.controller
-    const c = await this.ensure(uri)
-    if (uri !== this.uri) {
-      if (!fresh) {
+  // Load the player early (on the current song) so the first press of play is instant.
+  async cue(uri: string) {
+    if (uri === this.uri) return
+    try {
+      const c = await this.ensure(uri)
+      if (uri !== this.uri && !this.started) {
         this.expectReady()
         c.loadUri(uri)
+        this.uri = uri
       }
-      this.uri = uri
-      await this.ready
-      c.play()
-    } else c.resume()
+    } catch (err) {
+      log('could not load the player', err)
+    }
+  }
+
+  async play(uri: string) {
+    // Start watching right away, so the player pops up even if loading it hangs.
     this.watchForStall()
+    try {
+      const c = await this.ensure(uri)
+      if (uri !== this.uri) {
+        this.expectReady()
+        c.loadUri(uri)
+        this.uri = uri
+        this.started = false
+      }
+      await this.ready
+      if (this.started) c.resume()
+      else c.play()
+      this.started = true
+      log('play sent', uri)
+    } catch (err) {
+      log('could not start playback', err)
+      this.setStalled(true)
+    }
   }
 
   async pause() {
