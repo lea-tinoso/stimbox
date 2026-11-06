@@ -2,26 +2,19 @@ import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 import { TypingBubble } from './TypingBubble.tsx'
 
-// Folders on the right edge and heyclicky-style stickers. Decoration, plus folder shortcuts.
+// Folder icons on the right edge and heyclicky-style stickers. Decoration, plus folder shortcuts.
 
-function FolderIcon({ pink = false }: { pink?: boolean }) {
+// Mac OS X folder icons in the dock's style: ryOS's music folder, plus liked and loved
+// folders made from its plain folder with an embossed thumb and heart.
+function DesktopIcon({ src }: { src: string }) {
   return (
-    <svg
-      viewBox="0 0 54 44"
-      width={54}
-      height={44}
-      aria-hidden
-      className="mx-auto mb-0.5"
-    >
-      <path
-        d="M2 8a4 4 0 0 1 4-4h14l5 5h23a4 4 0 0 1 4 4v25a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"
-        className={pink ? 'fill-pink' : 'fill-aqua'}
-      />
-      <path
-        d="M2 15h50v23a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"
-        className={pink ? 'fill-pink-soft' : 'fill-aqua-hi'}
-      />
-    </svg>
+    <img
+      src={src}
+      alt=""
+      width={56}
+      height={56}
+      className="mx-auto mb-0.5 drop-shadow-[0_2px_2px_rgb(0_0_0/0.25)]"
+    />
   )
 }
 
@@ -29,9 +22,9 @@ export function DesktopClutter() {
   const { show, toIpod } = useDesktop()
   const { loved, liked } = usePlayer()
   const folders = [
-    { label: 'library', pink: false },
-    { label: `liked songs (${liked.size})`, pink: false },
-    { label: `loved ♥ (${loved.size})`, pink: true },
+    { label: 'library', icon: '/icons/sounds.png' },
+    { label: `liked songs (${liked.size})`, icon: '/icons/liked-folder.png' },
+    { label: `loved ♥ (${loved.size})`, icon: '/icons/loved-folder.png' },
   ]
   return (
     <>
@@ -44,7 +37,7 @@ export function DesktopClutter() {
             onClick={() => show('library')}
             className="w-24 text-center text-[11px] text-body"
           >
-            <FolderIcon pink={f.pink} />
+            <DesktopIcon src={f.icon} />
             <span className="rounded-sm bg-window/70 px-1">{f.label}</span>
           </button>
         ))}
@@ -54,13 +47,7 @@ export function DesktopClutter() {
           aria-label="bring back the ipod"
           className="w-24 text-center text-[11px] text-body"
         >
-          <img
-            src="/icons/ipod.png"
-            alt=""
-            width={44}
-            height={44}
-            className="mx-auto mb-0.5 drop-shadow-[0_2px_2px_rgb(0_0_0/0.3)]"
-          />
+          <DesktopIcon src="/icons/ipod.png" />
           <span className="rounded-sm bg-window/70 px-1">ipod</span>
         </button>
       </div>
