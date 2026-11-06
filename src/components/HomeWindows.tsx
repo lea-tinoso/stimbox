@@ -5,6 +5,7 @@ import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 import { Art } from './Art.tsx'
 import { Pill, Segmented } from './Pill.tsx'
+import { ArtistLinks } from './ArtistLinks.tsx'
 import { TrackList, TrackRow } from './TrackRow.tsx'
 import { Window } from './Window.tsx'
 
@@ -169,6 +170,7 @@ export function TrendingWindow() {
 export function StatsWindow() {
   const [range, setRange] = useState<Range>('4w')
   const s = useCatalog().stats[range]
+  const { openArtist, openSong } = useDesktop()
   const max = Math.max(1, ...s.genres.map((g) => g.share))
   const peakAt = s.byHour.indexOf(Math.max(...s.byHour))
   return (
@@ -243,10 +245,16 @@ export function StatsWindow() {
       </h3>
       <ol className="flex flex-col [&>li:nth-child(even)]:bg-stripe">
         {s.topArtists.map((a, i) => (
-          <li key={a.name} className="flex items-center gap-2.5 px-1.5 py-1">
-            <span className="w-3 text-[11px] text-mute">{i + 1}</span>
-            <Art art={a.art} size={30} round />
-            <span className="text-ink">{a.name}</span>
+          <li key={a.name}>
+            <button
+              type="button"
+              onClick={() => openArtist(a.name)}
+              className="group flex w-full items-center gap-2.5 px-1.5 py-1 text-left"
+            >
+              <span className="w-3 text-[11px] text-mute">{i + 1}</span>
+              <Art art={a.art} size={30} round />
+              <span className="text-ink group-hover:underline">{a.name}</span>
+            </button>
           </li>
         ))}
       </ol>
@@ -264,9 +272,19 @@ export function StatsWindow() {
               <span className="w-3 text-[11px] text-mute">{i + 1}</span>
               <Art art={t.art} size={30} />
               <span className="min-w-0">
-                <span className="block truncate text-ink">{t.title}</span>
-                <span className="block text-[11px] text-mute">
-                  {r.plays === undefined ? t.artist : `${r.plays} plays`}
+                <button
+                  type="button"
+                  onClick={() => openSong(t.id)}
+                  className="block max-w-full truncate text-left text-ink hover:underline"
+                >
+                  {t.title}
+                </button>
+                <span className="block truncate text-[11px] text-mute">
+                  {r.plays === undefined ? (
+                    <ArtistLinks artist={t.artist} />
+                  ) : (
+                    `${r.plays} plays`
+                  )}
                 </span>
               </span>
             </li>

@@ -1,8 +1,9 @@
-import { Fragment, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { getTrack } from '../data/fake.ts'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 import { AddToPlaylist } from './AddToPlaylist.tsx'
+import { ArtistLinks } from './ArtistLinks.tsx'
 import { Art } from './Art.tsx'
 
 export function TrackList({
@@ -42,7 +43,7 @@ export function TrackRow({
     toggleLove,
     disliked,
   } = usePlayer()
-  const { openSong, openArtist } = useDesktop()
+  const { openSong } = useDesktop()
   const t = getTrack(id)
   const isCurrent = current.id === id
   const isLoved = loved.has(id)
@@ -77,18 +78,7 @@ export function TrackRow({
           </button>
         </span>
         <span className="block truncate text-[11px] text-mute">
-          {t.artist.split(', ').map((name, i) => (
-            <Fragment key={name}>
-              {i > 0 && ', '}
-              <button
-                type="button"
-                onClick={() => openArtist(name)}
-                className="relative z-10 align-top hover:text-ink hover:underline"
-              >
-                {name}
-              </button>
-            </Fragment>
-          ))}
+          <ArtistLinks artist={t.artist} />
         </span>
       </span>
       <span className="relative z-10 flex items-center gap-2.5">

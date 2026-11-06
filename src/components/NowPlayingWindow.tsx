@@ -7,6 +7,7 @@ import { Art } from './Art.tsx'
 import { Pill, Segmented } from './Pill.tsx'
 import { Reactions } from './Reactions.tsx'
 import { TrackList, TrackRow } from './TrackRow.tsx'
+import { ArtistLinks } from './ArtistLinks.tsx'
 import { Window } from './Window.tsx'
 
 export function NowPlayingWindow() {
@@ -44,7 +45,11 @@ export function NowPlayingWindow() {
           {p.track.title}
         </h3>
         <p className="text-[15px] text-mute">
-          {p.track.artist} · {p.track.album} · {p.track.year}
+          <ArtistLinks
+            artist={p.track.artist}
+            className="hover:text-ink hover:underline"
+          />{' '}
+          · {p.track.album} · {p.track.year}
         </p>
         <label className="mt-4 block">
           <span className="sr-only">seek</span>

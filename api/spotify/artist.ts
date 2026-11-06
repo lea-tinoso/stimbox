@@ -124,17 +124,17 @@ export async function GET(request: Request) {
     similar: (info?.artist?.similar?.artist ?? [])
       .map((a) => a.name)
       .slice(0, 5),
-    // Only lea's browser learns whether she follows them.
-    following: isOwner(request) ? await isFollowing(artist.id) : null,
+    // Whether lea's account follows them.
+    following: await isFollowing(artist.id),
   }
   return json(data, {
     headers: isOwner(request) ? { 'Cache-Control': 'no-store' } : CACHE,
   })
 }
 
-// Follow (PUT) or unfollow (DELETE), for lea only.
+// Anyone may follow an artist on lea's account (her choice); only lea may unfollow.
 async function follow(request: Request, method: 'PUT' | 'DELETE') {
-  if (!configured() || !isOwner(request))
+  if (!configured() || (method === 'DELETE' && !isOwner(request)))
     return json({ error: 'not allowed' }, { status: 403 })
   const id = new URL(request.url).searchParams.get('id') ?? ''
   if (!/^[A-Za-z0-9]{1,40}$/.test(id))

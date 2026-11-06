@@ -265,11 +265,12 @@ function MoreMenu({ items }: { items: { label: string; run: () => void }[] }) {
   )
 }
 
+// Follows the artist on lea's Spotify account. Anyone can follow; only lea's browser can unfollow.
 function FollowButton({ data }: { data: ArtistData }) {
   const owner = useIsOwner()
   const [state, setState] = useState<{ id: string; on: boolean } | null>(null)
   const on = state?.id === data.id ? state.on : !!data.following
-  if (!owner || data.following === null)
+  if (data.following === null)
     return (
       <a
         href={data.url}
@@ -291,7 +292,12 @@ function FollowButton({ data }: { data: ArtistData }) {
       .then((ok) => !ok && setState({ id: data.id, on: !next }))
   }
   return (
-    <Pill pressed={on} onClick={toggle}>
+    <Pill
+      pressed={on}
+      onClick={toggle}
+      disabled={on && !owner}
+      title={on && !owner ? 'lea follows them' : undefined}
+    >
       {on ? '✓ following' : '+ follow'}
     </Pill>
   )

@@ -203,14 +203,31 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const uri = track.uri
     if (!uri) return
     let done = false
+    let last = 0
     return spotifyEmbed.onUpdate((u) => {
       if (u.duration <= 0) return
       setHeard({ uri, length: u.duration / 1000 })
       setPosition(Math.floor(u.position / 1000))
-      if (!done && u.position >= u.duration - 400) {
+      // In a background tab the browser slows the player's updates down, so the one at the
+      // very end can be missed. Also count it as ended when Spotify stops by itself (we didn't
+      // pause it) or jumps back to the start, shortly after we last saw it near the end.
+      const nearEnd = last >= u.duration - 15000
+      const stoppedByItself =
+        u.isPaused && !u.isBuffering && spotifyEmbed.wantsToPlay()
+      const ended =
+        u.position >= u.duration - 400 ||
+        (nearEnd &&
+          (stoppedByItself ||
+            (u.position < last - 5000 && !spotifyEmbed.justSeeked())))
+      if (!done && ended) {
         done = true
+        spotifyEmbed.log('song ended, next', {
+          at: last,
+          hidden: document.hidden,
+        })
         endedRef.current()
-      } else if (u.position < u.duration - 400) done = false
+      } else if (!ended) done = false
+      last = u.position
     })
   }, [track.uri])
 

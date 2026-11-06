@@ -159,7 +159,9 @@ class Chiptune {
     const song = this.song
     if (!ctx || !song) return
     const sixteenth = 60 / song.bpm / 2
-    while (this.nextTime < ctx.currentTime + 0.12) {
+    // Background tabs run timers about once a second, so schedule further ahead there.
+    const ahead = document.hidden ? 1.5 : 0.12
+    while (this.nextTime < ctx.currentTime + ahead) {
       const i = this.step % song.lead.length
       const n = song.lead[i]
       if (n !== null)

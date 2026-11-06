@@ -54,6 +54,8 @@ class SpotifyEmbed {
   private stalled = false
   private stallSubs = new Set<() => void>()
   private started = false
+  // false after pause(): a stop we asked for, not the song ending
+  private wanted = false
 
   constructor() {
     this.host = new Promise((resolve) => (this.setHostEl = resolve))
@@ -172,7 +174,13 @@ class SpotifyEmbed {
     }
   }
 
+  wantsToPlay = () => this.wanted
+  private seekedAt = 0
+  justSeeked = () => Date.now() - this.seekedAt < 2000
+  log = log
+
   async play(uri: string) {
+    this.wanted = true
     // Start watching right away, so the player pops up even if loading it hangs.
     this.watchForStall()
     try {
@@ -195,11 +203,13 @@ class SpotifyEmbed {
   }
 
   async pause() {
+    this.wanted = false
     this.setStalled(false)
     if (this.controller) (await this.controller).pause()
   }
 
   async seek(seconds: number) {
+    this.seekedAt = Date.now()
     if (this.controller) (await this.controller).seek(seconds)
   }
 }
