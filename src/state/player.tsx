@@ -152,8 +152,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (track.uri) {
       chiptune.pause()
-      // Spotify's player has no volume control, so sound off pauses it.
-      if (playing && !muted) void spotifyEmbed.play(track.uri)
+      if (playing) void spotifyEmbed.play(track.uri)
       else {
         void spotifyEmbed.pause()
         void spotifyEmbed.cue(track.uri)
@@ -163,7 +162,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (playing) chiptune.play(track.id)
       else chiptune.pause()
     }
-  }, [playing, muted, track.id, track.uri])
+  }, [playing, track.id, track.uri])
+
+  // Spotify's player has no volume control: sound off pauses a Spotify song, and playing one
+  // turns the sound back on (before, a muted Spotify song looked like it played but was silent).
+  const setMuted = useCallback(
+    (v: boolean) => {
+      setMutedState(v)
+      if (v && track.uri) setPlaying(false)
+    },
+    [track.uri],
+  )
 
   useEffect(() => {
     chiptune.setMuted(muted)
@@ -277,6 +286,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setIndex(0)
     setPosition(0)
     setPlaying(true)
+    if (getTrack(id).uri) setMutedState(false)
     setRadio({ seed: id, page: 0 })
   }, [])
 
@@ -286,6 +296,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setIndex(start)
     setPosition(0)
     setPlaying(true)
+    if (getTrack(ids[start] ?? '').uri) setMutedState(false)
   }, [])
 
   const playTrack = useCallback(
@@ -299,6 +310,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       setPosition(0)
       setPlaying(true)
+      if (getTrack(id).uri) setMutedState(false)
     },
     [queue, index],
   )
@@ -350,7 +362,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       muted,
       preview,
       length: preview ? heard.length : track.duration,
-      setMuted: setMutedState,
+      setMuted,
       repeat,
       liked,
       loved,
@@ -359,7 +371,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playTrack,
       playRadio,
       radio: radio !== null,
-      toggle: () => setPlaying((p) => !p),
+      toggle: () => {
+        if (!playing && track.uri) setMutedState(false)
+        setPlaying((p) => !p)
+      },
       next: () => step(1),
       prev: () => (position > 3 ? setPosition(0) : step(-1)),
       seek: (s) => {
@@ -383,6 +398,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       position,
       shuffle,
       muted,
+      setMuted,
       heard,
       preview,
       repeat,
