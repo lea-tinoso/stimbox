@@ -18,6 +18,20 @@ export type OutCollection = {
   image: string
   trackIds: string[]
 }
+// A playlist, album or artist in search results. Its songs load when it's opened.
+export type OutResult = {
+  id: string
+  kind: 'playlist' | 'album' | 'artist'
+  title: string
+  subtitle: string
+  image: string
+}
+export type SearchData = {
+  tracks: OutTrack[]
+  playlists: OutResult[]
+  albums: OutResult[]
+  artists: OutResult[]
+}
 export type HomeData = {
   tracks: OutTrack[]
   recent: { trackId: string; playedAt: string }[]

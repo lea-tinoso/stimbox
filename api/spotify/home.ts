@@ -1,23 +1,15 @@
 import type { HomeData, OutTrack } from '../../src/data/spotify-types.ts'
 import { CACHE, configured, json, spotify } from '../_spotify.js'
+import {
+  pick,
+  toOut,
+  type Image,
+  type Paged,
+  type SpotifyTrack,
+} from '../_tracks.js'
 
 // Everything the desktop shows, in one cached call: lea's recent plays, playlists, top artists and
 // tracks per time range, and liked songs. The app falls back to its demo data when this fails.
-
-type Image = { url: string; width?: number | null }
-type SpotifyTrack = {
-  id: string | null
-  uri: string
-  name: string
-  duration_ms: number
-  artists: { name: string }[]
-  album?: { id: string; name: string; release_date?: string; images?: Image[] }
-}
-type Paged<T> = { items: T[] }
-
-// Spotify lists images largest first. Take one near 300px for crisp art at 2x.
-const pick = (images: Image[] = []) =>
-  (images.find((i) => (i.width ?? 0) <= 320) ?? images[0])?.url ?? ''
 
 export async function GET() {
   if (!configured()) return json({ error: 'not configured' }, { status: 503 })
@@ -27,20 +19,10 @@ export async function GET() {
     t: SpotifyTrack | null | undefined,
     album?: SpotifyTrack['album'],
   ) => {
-    if (!t?.id) return null
-    const al = t.album ?? album
-    if (!tracks.has(t.id))
-      tracks.set(t.id, {
-        id: t.id,
-        uri: t.uri,
-        title: t.name,
-        artist: t.artists.map((a) => a.name).join(', '),
-        album: al?.name ?? '',
-        year: Number(al?.release_date?.slice(0, 4)) || 0,
-        image: pick(al?.images),
-        duration: Math.round(t.duration_ms / 1000),
-      })
-    return t.id
+    const out = toOut(t, album)
+    if (!out) return null
+    if (!tracks.has(out.id)) tracks.set(out.id, out)
+    return out.id
   }
   const ids = (list: (string | null)[]) => list.filter((x): x is string => !!x)
 

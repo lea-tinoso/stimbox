@@ -22,7 +22,7 @@ export type LyricLine = { at: number; text: string }
 export type Collection = {
   id: string
   title: string
-  kind: 'playlist' | 'album'
+  kind: 'playlist' | 'album' | 'artist'
   subtitle: string
   art: Art
   trackIds: string[]
