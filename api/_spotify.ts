@@ -17,6 +17,21 @@ export function env(name: string) {
   return process.env[name] ?? ''
 }
 
+// The address Spotify sends lea back to. It must match the dashboard exactly, so it comes from the
+// public host the browser used (Vercel's forwarded headers), not the function's internal URL.
+export function redirectUri(request: Request) {
+  if (env('SPOTIFY_REDIRECT_URI')) return env('SPOTIFY_REDIRECT_URI')
+  const host =
+    request.headers.get('x-forwarded-host') ??
+    request.headers.get('host') ??
+    new URL(request.url).host
+  const proto =
+    host.startsWith('127.0.0.1') || host.startsWith('localhost')
+      ? 'http'
+      : 'https'
+  return `${proto}://${host}/api/spotify/callback`
+}
+
 export function basicAuth() {
   return `Basic ${Buffer.from(`${env('SPOTIFY_CLIENT_ID')}:${env('SPOTIFY_CLIENT_SECRET')}`).toString('base64')}`
 }
