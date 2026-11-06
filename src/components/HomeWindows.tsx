@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getTrack, type Range } from '../data/fake.ts'
+import { useTrending, type Region } from '../lib/useTrending.ts'
 import { useCatalog } from '../state/catalog.tsx'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
@@ -141,8 +142,8 @@ function Move({ move }: { move: number | 'new' }) {
 }
 
 export function TrendingWindow() {
-  const [region, setRegion] = useState<'ph' | 'asia' | 'world'>('ph')
-  const { trending } = useCatalog()
+  const [region, setRegion] = useState<Region>('ph')
+  const { entries, loading } = useTrending(region)
   return (
     <Window id="trending" title="trending" width={404} height={392}>
       <div className="mb-2.5">
@@ -154,7 +155,10 @@ export function TrendingWindow() {
         />
       </div>
       <TrackList label={`trending in ${region}`}>
-        {trending[region].map((e, i) => (
+        {loading && (
+          <li className="px-1.5 py-2 text-[11px] text-mute">loading charts…</li>
+        )}
+        {entries.map((e, i) => (
           <TrackRow
             key={e.trackId}
             id={e.trackId}

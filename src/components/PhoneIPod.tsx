@@ -15,6 +15,7 @@ import { useLyrics } from '../lib/lyrics.ts'
 import { recentSearches, useRecentSearches } from '../lib/recentSearches.ts'
 import { useJson } from '../lib/useJson.ts'
 import { useSearch } from '../lib/useSearch.ts'
+import { useTrending, type Region } from '../lib/useTrending.ts'
 import { useCatalog } from '../state/catalog.tsx'
 import { usePlayer } from '../state/player.tsx'
 import { usePlaylists } from '../state/playlists.tsx'
@@ -36,6 +37,7 @@ type Screen =
   | { id: 'collection'; c: Collection }
   | { id: 'songs'; title: string; ids: string[] }
   | { id: 'artist'; name: string }
+  | { id: 'chart'; region: Region; title: string }
 
 type Row = {
   key: string
@@ -63,6 +65,7 @@ function title(s: Screen) {
       return 'top artists'
     case 'collections':
     case 'songs':
+    case 'chart':
       return s.title
     case 'collection':
       return s.c.title
@@ -154,6 +157,7 @@ export function PhoneIPod() {
     (d) => registerTracks(d.songs.map(toTrack)),
   )
 
+  const chart = useTrending(screen.id === 'chart' ? screen.region : 'ph')
   const songRow = (id: string, go: () => void, sub?: string): Row => {
     const t = getTrack(id)
     return { key: id, label: t.title, sub: sub ?? t.artist, art: t.art, go }
@@ -327,12 +331,10 @@ export function PhoneIPod() {
           key: k,
           label,
           go: () =>
-            push({
-              id: 'songs',
-              title: `trending · ${label}`,
-              ids: catalog.trending[k].map((e) => e.trackId),
-            }),
+            push({ id: 'chart', region: k, title: `trending · ${label}` }),
         }))
+      case 'chart':
+        return songRows(chart.entries.map((e) => e.trackId))
       case 'library':
         return menu([
           [
@@ -560,7 +562,8 @@ export function PhoneIPod() {
                           ? 'searching…'
                           : 'nothing found'
                         : 'type to search'
-                      : screen.id === 'artist' && artist.loading
+                      : (screen.id === 'artist' && artist.loading) ||
+                          (screen.id === 'chart' && chart.loading)
                         ? 'loading…'
                         : 'nothing here yet'}
                   </li>

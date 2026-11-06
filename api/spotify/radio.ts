@@ -1,38 +1,13 @@
-import { CACHE, configured, env, json, spotify } from '../_spotify.js'
+import { lastfm, find } from '../_lastfm.js'
+import { CACHE, configured, json } from '../_spotify.js'
 import type { OutTrack } from '../../src/data/spotify-types.ts'
-import { present, toOut, type Paged, type SpotifyTrack } from '../_tracks.js'
+import { present, toOut } from '../_tracks.js'
 
 // "Keep playing similar songs" after a song picked from search, like YouTube Music's radio.
 // Spotify closed recommendations to new apps, so Last.fm says what's similar (needs the
 // LASTFM_API_KEY env var) and Spotify search finds each song. Without a key, or when Last.fm
 // knows nothing, it falls back to more songs by the same artist.
 type Similar = { name: string; artist: { name: string } }
-
-async function lastfm<T>(params: Record<string, string>): Promise<T | null> {
-  const key = env('LASTFM_API_KEY')
-  if (!key) return null
-  const url = new URL('https://ws.audioscrobbler.com/2.0/')
-  for (const [k, v] of Object.entries({
-    ...params,
-    api_key: key,
-    format: 'json',
-    autocorrect: '1',
-  }))
-    url.searchParams.set(k, v)
-  try {
-    const res = await fetch(url)
-    return res.ok ? ((await res.json()) as T) : null
-  } catch {
-    return null
-  }
-}
-
-const find = async (q: string, limit = 1, offset = 0) =>
-  (
-    await spotify<{ tracks: Paged<SpotifyTrack> }>(
-      `/search?type=track&limit=${limit}&offset=${offset}&q=${encodeURIComponent(q)}`,
-    )
-  )?.tracks.items ?? []
 
 export async function GET(request: Request) {
   if (!configured()) return json({ error: 'not configured' }, { status: 503 })
