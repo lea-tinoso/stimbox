@@ -45,6 +45,17 @@ type DesktopApi = {
   move: (id: WinId, p: WinPos) => void
   zOf: (id: WinId) => number
   reset: () => void
+  // The player has two sizes, like iTunes' mini player: the iPod and the big now playing window.
+  toIpod: () => void
+  toBigPlayer: () => void
+}
+
+// Bring a window back on screen if it was dragged away or the browser got smaller.
+function onScreen(p: WinPos): WinPos {
+  return {
+    x: Math.min(Math.max(p.x, 0), Math.max(0, window.innerWidth - 260)),
+    y: Math.min(Math.max(p.y, 24), Math.max(24, window.innerHeight - 200)),
+  }
 }
 
 const DesktopContext = createContext<DesktopApi | null>(null)
@@ -73,6 +84,13 @@ export function DesktopProvider({ children }: { children: ReactNode }) {
       setOpen((s) => {
         const next = new Set(s).add(id)
         save('open', [...next])
+        return next
+      })
+      setPos((prev) => {
+        const fixed = onScreen(prev[id])
+        if (fixed.x === prev[id].x && fixed.y === prev[id].y) return prev
+        const next = { ...prev, [id]: fixed }
+        save('pos', next)
         return next
       })
       focus(id)
@@ -106,6 +124,16 @@ export function DesktopProvider({ children }: { children: ReactNode }) {
     save('pos', DEFAULT_POS)
   }, [])
 
+  const toIpod = useCallback(() => {
+    hide('nowplaying')
+    show('ipod')
+  }, [hide, show])
+
+  const toBigPlayer = useCallback(() => {
+    hide('ipod')
+    show('nowplaying')
+  }, [hide, show])
+
   const api = useMemo<DesktopApi>(
     () => ({
       open,
@@ -116,9 +144,11 @@ export function DesktopProvider({ children }: { children: ReactNode }) {
       focus,
       move,
       reset,
+      toIpod,
+      toBigPlayer,
       zOf: (id) => 10 + Math.max(0, order.indexOf(id)),
     }),
-    [open, order, pos, show, hide, focus, move, reset],
+    [open, order, pos, show, hide, focus, move, reset, toIpod, toBigPlayer],
   )
   return <DesktopContext value={api}>{children}</DesktopContext>
 }

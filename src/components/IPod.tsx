@@ -7,16 +7,19 @@ import { usePlayer } from '../state/player.tsx'
 import { Art } from './Art.tsx'
 import { Reactions } from './Reactions.tsx'
 
-// The player. Drag it by its body; the screen opens now playing; the wheel controls playback.
+// The small player. Drag it by its body. Red and yellow put it away in the dock; green, the screen
+// and menu swap it for the big now playing window (and its yellow light swaps back).
 export function IPod() {
   const p = usePlayer()
-  const { pos, show, open, zOf } = useDesktop()
+  const { pos, open, zOf, show, hide, toBigPlayer } = useDesktop()
   const drag = useDrag('ipod')
   const compact = useCompact()
+  const zoom = compact ? () => show('nowplaying') : toBigPlayer
   const lines = useMemo(() => lyricsFor(p.track), [p.track])
   const cur = currentLine(lines, p.position)
   const showingLyrics = open.has('nowplaying')
   const pct = (p.position / p.track.duration) * 100
+  if (!compact && !open.has('ipod')) return null
 
   return (
     <aside
@@ -33,9 +36,31 @@ export function IPod() {
           : { left: pos.ipod.x, top: pos.ipod.y, zIndex: zOf('ipod') }
       }
     >
+      {!compact && (
+        <div className="mb-2 flex gap-1.5 self-start">
+          <button
+            type="button"
+            aria-label="close ipod"
+            onClick={() => hide('ipod')}
+            className="light size-[11px] rounded-full text-light-red"
+          />
+          <button
+            type="button"
+            aria-label="minimize ipod"
+            onClick={() => hide('ipod')}
+            className="light size-[11px] rounded-full text-light-yellow"
+          />
+          <button
+            type="button"
+            aria-label="zoom to now playing and lyrics"
+            onClick={toBigPlayer}
+            className="light size-[11px] rounded-full text-light-green"
+          />
+        </div>
+      )}
       <button
         type="button"
-        onClick={() => show('nowplaying')}
+        onClick={zoom}
         aria-label="open now playing"
         className="flex h-[156px] w-[206px] flex-col overflow-hidden rounded-md border-2 border-lcd-ink/80 bg-lcd text-left text-lcd-ink"
       >
@@ -84,7 +109,7 @@ export function IPod() {
       <div className="ipod-wheel relative mt-3 size-44 rounded-full border border-hairline/70 text-[11px] font-bold text-mute">
         <button
           type="button"
-          onClick={() => show('nowplaying')}
+          onClick={zoom}
           className="absolute top-2 left-1/2 -translate-x-1/2 px-2"
         >
           menu

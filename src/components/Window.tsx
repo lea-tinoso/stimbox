@@ -10,6 +10,10 @@ type Props = {
   height?: number
   children: ReactNode
   bodyClassName?: string
+  // Yellow light. Defaults to closing the window into the dock.
+  onMinimize?: () => void
+  // Green light. Without it the light is decoration, as on a window that can't grow.
+  onZoom?: () => void
 }
 
 export function Window({
@@ -19,6 +23,8 @@ export function Window({
   height,
   children,
   bodyClassName = '',
+  onMinimize,
+  onZoom,
 }: Props) {
   const { pos, open, hide, focus, zOf, order } = useDesktop()
   const drag = useDrag(id)
@@ -55,13 +61,22 @@ export function Window({
           <button
             type="button"
             aria-label={`minimize ${title}`}
-            onClick={() => hide(id)}
+            onClick={onMinimize ?? (() => hide(id))}
             className={`light size-[13px] rounded-full ${active ? 'text-light-yellow' : 'text-chrome-lo'}`}
           />
-          <span
-            aria-hidden
-            className={`light size-[13px] rounded-full ${active ? 'text-light-green' : 'text-chrome-lo'}`}
-          />
+          {onZoom ? (
+            <button
+              type="button"
+              aria-label={`zoom ${title}`}
+              onClick={onZoom}
+              className={`light size-[13px] rounded-full ${active ? 'text-light-green' : 'text-chrome-lo'}`}
+            />
+          ) : (
+            <span
+              aria-hidden
+              className={`light size-[13px] rounded-full ${active ? 'text-light-green' : 'text-chrome-lo'}`}
+            />
+          )}
         </div>
         <h2
           className={`flex-1 truncate pr-14 text-center text-[13px] font-normal ${active ? 'text-ink' : 'text-mute'}`}
