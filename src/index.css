@@ -32,10 +32,16 @@
   --color-lcd-ink: #1b2a3a;
   --color-ipod-hi: #fbfbfb;
   --color-ipod-lo: #d4d4da;
+  --color-term: #0d0d0d;
+  --color-term-ink: #d6d6d6;
+  --color-term-dim: #8d8d8d;
+  --color-term-green: #7fd18b;
+  --color-term-blue: #8bbcf7;
 
   --font-sans:
     'Lucida Grande', 'Lucida Sans Unicode', 'DejaVu Sans', Verdana, sans-serif;
   --font-hand: 'Caveat', cursive;
+  --font-mono: Monaco, Menlo, 'DejaVu Sans Mono', monospace;
 
   --radius-window: 7px;
   --radius-art: 3px;

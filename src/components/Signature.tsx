@@ -1,5 +1,8 @@
+import { useDesktop } from '../state/desktop.tsx'
+
 // The maker's mark, as a Mac OS X Stickies note. Same card as Lea's other projects (Abbott).
 export function Signature() {
+  const { show } = useDesktop()
   return (
     <aside
       aria-label="about the creator"
@@ -30,14 +33,13 @@ export function Signature() {
           feature. currently on play 48 ♪
         </p>
         <p className="mt-2 text-[11px] text-mute">
-          <a
-            href="https://github.com/lea-tinoso/stimbox#readme"
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => show('terminal')}
             className="text-aqua-deep underline hover:text-selection"
           >
-            how it&apos;s made ↗
-          </a>
+            nerdstats
+          </button>
           <span aria-hidden> · </span>
           <a
             href="https://lea-showcase.vercel.app"

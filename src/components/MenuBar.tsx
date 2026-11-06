@@ -31,7 +31,9 @@ export function MenuBar({
       aria-label="menu bar"
       className="fixed inset-x-0 top-0 z-[1000] flex h-6 items-center gap-4 border-b border-hairline bg-gradient-to-b from-window to-chrome-hi px-3 text-[13px] text-ink shadow-[0_1px_3px_rgb(0_0_0/0.2)]"
     >
-      <span className="font-bold">♪ stimbox</span>
+      <button type="button" className="font-bold" onClick={() => show('about')}>
+        ♪ stimbox
+      </button>
       <button
         type="button"
         className="hidden sm:block"
