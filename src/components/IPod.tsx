@@ -35,50 +35,64 @@ export function IPod() {
           : { left: pos.ipod.x, top: pos.ipod.y, zIndex: zOf('ipod') }
       }
     >
-      <button
-        type="button"
-        onClick={zoom}
-        aria-label="open now playing"
-        className="flex h-[156px] w-[206px] flex-col overflow-hidden rounded-md border-2 border-lcd-ink/80 bg-lcd text-left text-lcd-ink"
-      >
-        <span className="lcd-bar flex h-4 items-center justify-between border-b border-lcd-ink/60 px-1.5 text-[10px]">
-          <span aria-hidden>{p.playing ? '▶' : '❚❚'}</span>
-          <span>{showingLyrics ? 'lyrics' : 'now playing'}</span>
-          <span aria-hidden>▮▮▮</span>
-        </span>
-        {showingLyrics ? (
-          <span className="flex flex-1 flex-col justify-center px-2 text-[12px] leading-snug">
-            <span className="truncate opacity-50">
-              {lines[cur - 1]?.text ?? ' '}
-            </span>
-            <span className="truncate bg-lcd-ink px-1 text-lcd">
-              {lines[cur]?.text ?? '♪ ♪ ♪'}
-            </span>
-            <span className="truncate opacity-50">
-              {lines[cur + 1]?.text ?? ' '}
-            </span>
+      <div className="flex h-[156px] w-[206px] flex-col overflow-hidden rounded-md border-2 border-lcd-ink/80 bg-lcd text-lcd-ink">
+        <button
+          type="button"
+          onClick={zoom}
+          aria-label="open now playing"
+          className="flex min-h-0 flex-1 flex-col text-left"
+        >
+          <span className="lcd-bar flex h-4 items-center justify-between border-b border-lcd-ink/60 px-1.5 text-[10px]">
+            <span aria-hidden>{p.playing ? '❚❚' : '▶'}</span>
+            <span>{showingLyrics ? 'lyrics' : 'now playing'}</span>
+            <span aria-hidden>▮▮▮</span>
           </span>
-        ) : (
-          <span className="flex gap-2 px-2 pt-2 pb-1">
-            <Art art={p.track.art} size={62} />
-            <span className="min-w-0 text-[11px] leading-snug">
-              <b className="block truncate text-[13px]">{p.track.title}</b>
-              <span className="line-clamp-2">{p.track.artist}</span>
-              <span className="block truncate opacity-70">{p.track.album}</span>
+          {showingLyrics ? (
+            <span className="flex flex-1 flex-col justify-center px-2 text-[12px] leading-snug">
+              <span className="truncate opacity-50">
+                {lines[cur - 1]?.text ?? ' '}
+              </span>
+              <span className="truncate bg-lcd-ink px-1 text-lcd">
+                {lines[cur]?.text ?? '♪ ♪ ♪'}
+              </span>
+              <span className="truncate opacity-50">
+                {lines[cur + 1]?.text ?? ' '}
+              </span>
             </span>
-          </span>
-        )}
-        <span className="mx-2 block h-[7px] border border-lcd-ink bg-window">
+          ) : (
+            <span className="flex gap-2 px-2 pt-2 pb-1">
+              <Art art={p.track.art} size={62} />
+              <span className="min-w-0 text-[11px] leading-snug">
+                <b className="block truncate text-[13px]">{p.track.title}</b>
+                <span className="line-clamp-2">{p.track.artist}</span>
+                <span className="block truncate opacity-70">
+                  {p.track.album}
+                </span>
+              </span>
+            </span>
+          )}
+        </button>
+        {/* The LCD's progress bar, with an invisible slider on top so the time can be dragged. */}
+        <label className="relative mx-2 block h-[7px] border border-lcd-ink bg-window">
+          <span className="sr-only">seek</span>
           <span
             className="block h-full bg-lcd-ink"
             style={{ width: `${pct}%` }}
           />
-        </span>
-        <span className="flex justify-between px-2 text-[10px] tabular-nums">
+          <input
+            type="range"
+            min={0}
+            max={p.length}
+            value={p.position}
+            onChange={(e) => p.seek(Number(e.target.value))}
+            className="absolute -inset-y-1.5 inset-x-0 h-auto w-full cursor-pointer opacity-0"
+          />
+        </label>
+        <span className="flex justify-between px-2 pb-0.5 text-[10px] tabular-nums">
           <span>{fmt(p.position)}</span>
           <span>-{fmt(p.length - p.position)}</span>
         </span>
-      </button>
+      </div>
 
       <div className="ipod-wheel relative mt-3 size-44 rounded-full border border-hairline/70 text-[11px] font-bold text-mute">
         <button

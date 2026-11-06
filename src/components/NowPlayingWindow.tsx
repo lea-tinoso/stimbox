@@ -61,13 +61,13 @@ export function NowPlayingWindow() {
           <span>{fmt(p.position)}</span>
           <span>{fmt(p.length)}</span>
         </p>
-        <p className="mt-1 text-[11px] text-mute">
-          {p.track.uri
-            ? p.preview
+        {(p.preview || !p.track.uri) && (
+          <p className="mt-1 text-[11px] text-mute">
+            {p.track.uri
               ? 'playing a 30-second preview from spotify · log into spotify in this browser for full songs'
-              : 'playing from spotify'
-            : 'demo song · chiptune stand-in'}
-        </p>
+              : 'demo song · chiptune stand-in'}
+          </p>
+        )}
         <div className="mt-3 flex items-center gap-2">
           <Pill
             pressed={p.shuffle}
@@ -106,6 +106,19 @@ export function NowPlayingWindow() {
             className="!px-3 text-[15px]"
           >
             {p.repeat === 'one' ? '↻¹' : '↻'}
+          </Pill>
+          <Pill
+            pressed={!p.muted}
+            onClick={() => p.setMuted(!p.muted)}
+            aria-label="sound"
+            title={
+              p.track.uri && p.muted
+                ? 'sound off pauses spotify songs'
+                : undefined
+            }
+            className="!px-3 text-[15px]"
+          >
+            <span aria-hidden>{p.muted ? '🔇' : '🔊'}</span>
           </Pill>
           <div className="ml-auto">
             <Reactions variant="aqua" />

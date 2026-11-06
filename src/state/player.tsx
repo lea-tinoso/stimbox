@@ -147,7 +147,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (track.uri) {
       chiptune.pause()
-      if (playing) void spotifyEmbed.play(track.uri)
+      // Spotify's player has no volume control, so sound off pauses it.
+      if (playing && !muted) void spotifyEmbed.play(track.uri)
       else {
         void spotifyEmbed.pause()
         void spotifyEmbed.cue(track.uri)
@@ -157,7 +158,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (playing) chiptune.play(track.id)
       else chiptune.pause()
     }
-  }, [playing, track.id, track.uri])
+  }, [playing, muted, track.id, track.uri])
 
   useEffect(() => {
     chiptune.setMuted(muted)

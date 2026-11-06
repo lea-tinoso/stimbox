@@ -232,7 +232,8 @@ export function LibraryWindow() {
     libraryTab: tab,
     setLibraryTab,
   } = usePlaylists()
-  const { show } = useDesktop()
+  const { show, openCollection } = useDesktop()
+  const { spotifyPlaylists } = useCatalog()
   const [setToast, toast] = useUndo()
 
   const lists = {
@@ -258,7 +259,10 @@ export function LibraryWindow() {
             { value: 'loved', label: `loved (${loved.size})` },
             { value: 'liked', label: `liked (${liked.size})` },
             { value: 'disliked', label: `disliked (${disliked.size})` },
-            { value: 'playlists', label: `playlists (${playlists.length})` },
+            {
+              value: 'playlists',
+              label: `playlists (${playlists.length + spotifyPlaylists.length})`,
+            },
           ]}
         />
       </div>
@@ -271,6 +275,35 @@ export function LibraryWindow() {
               + new playlist
             </Pill>
           </div>
+          {spotifyPlaylists.length > 0 && (
+            <>
+              <ul
+                aria-label="your playlists on spotify"
+                className="mb-3 flex flex-col [&>li:nth-child(even)]:bg-stripe"
+              >
+                {spotifyPlaylists.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      onClick={() => openCollection(c)}
+                      className="flex w-full items-center gap-2.5 px-1.5 py-1.5 text-left"
+                    >
+                      <Art art={c.art} size={36} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-ink">
+                          {c.title}
+                        </span>
+                        <span className="block truncate text-[11px] text-mute">
+                          on spotify · {c.trackIds.length} songs
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="mb-1.5 text-[11px] text-mute">made here</p>
+            </>
+          )}
           {playlists.length === 0 && (
             <p className="text-mute">
               no playlists yet. make one, then add songs with the + on any song.

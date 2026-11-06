@@ -10,7 +10,8 @@ export function useDrag(id: WinId) {
 
   const onPointerDown = useCallback(
     (e: PointerEvent<HTMLElement>) => {
-      if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return
+      if (e.button !== 0 || (e.target as HTMLElement).closest('button, input'))
+        return
       focus(id)
       start.current = {
         px: e.clientX,

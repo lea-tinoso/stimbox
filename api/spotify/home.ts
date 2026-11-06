@@ -78,7 +78,7 @@ export async function GET() {
 
   // Playlist songs. Spotify renamed /tracks to /items in 2026, so try both.
   const playlists = await Promise.all(
-    (playlistsRes?.items ?? []).slice(0, 10).map(async (p) => {
+    (playlistsRes?.items ?? []).slice(0, 20).map(async (p) => {
       type Entry = { track?: SpotifyTrack; item?: SpotifyTrack }
       const res =
         (await spotify<Paged<Entry>>(`/playlists/${p.id}/items?limit=40`)) ??

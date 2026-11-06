@@ -25,6 +25,8 @@ export type Catalog = {
   recentCollections: Collection[]
   forYouSongs: string[]
   forYouPlaylists: Collection[]
+  // lea's own playlists on Spotify, for the library.
+  spotifyPlaylists: Collection[]
   forYouNote: string
   trending: typeof trending
   stats: Record<Range, Stats>
@@ -39,6 +41,7 @@ export const DEMO: Catalog = {
   recentCollections,
   forYouSongs,
   forYouPlaylists,
+  spotifyPlaylists: [],
   forYouNote: 'because you played opm faves',
   trending,
   stats,
@@ -155,9 +158,8 @@ export function fromSpotify(d: HomeData): Catalog {
       : d.liked.slice(0, 10).length
         ? d.liked.slice(0, 10)
         : DEMO.forYouSongs,
-    forYouPlaylists: playlists.slice(3).length
-      ? playlists.slice(3)
-      : DEMO.forYouPlaylists,
+    forYouPlaylists: playlists.length ? playlists : DEMO.forYouPlaylists,
+    spotifyPlaylists: playlists,
     forYouNote: oldFaves.length
       ? 'old favorites you haven’t played lately'
       : 'from your liked songs',
