@@ -302,6 +302,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playTrack = useCallback(
     (id: string) => {
       const at = queue.indexOf(id)
+      // A Spotify song from outside the queue (trending, for you, a song page) starts a fresh
+      // queue of similar songs, like YouTube Music's radio, instead of slipping into the old one.
+      if (at < 0 && getTrack(id).uri) return playRadio(id)
       if (at >= 0) {
         setIndex(at)
       } else {
@@ -312,7 +315,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setPlaying(true)
       if (getTrack(id).uri) setMutedState(false)
     },
-    [queue, index],
+    [queue, index, playRadio],
   )
 
   const toggleLove = useCallback(
