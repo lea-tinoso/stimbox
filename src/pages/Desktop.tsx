@@ -11,6 +11,7 @@ import { IPod } from '../components/IPod.tsx'
 import { LibraryWindow, SearchWindow } from '../components/LibraryWindows.tsx'
 import { MenuBar } from '../components/MenuBar.tsx'
 import { NowPlayingWindow } from '../components/NowPlayingWindow.tsx'
+import { Signature } from '../components/Signature.tsx'
 import { Wallpaper } from '../components/Wallpaper.tsx'
 import { useCompact } from '../lib/useMedia.ts'
 import { useDesktop } from '../state/desktop.tsx'
@@ -46,6 +47,7 @@ export default function Desktop() {
       <Wallpaper />
       <MenuBar query={query} onQuery={setQuery} />
       {!compact && <DesktopClutter />}
+      {!compact && <Signature />}
       <main
         className={
           compact

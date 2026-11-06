@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="30 44 140 140">
+<!-- Lea's cartoon portrait, from lea-showcase -->
+<rect x="30" y="44" width="140" height="140" fill="#ff90e8"/>
+<path d="M44 250V118c0-48 24-78 56-78s56 30 56 78v132z" fill="#d9a24e" stroke="#111" stroke-width="4"/>
+<path d="M28 250c4-44 30-66 72-66s68 22 72 66z" fill="#f1ead9" stroke="#111" stroke-width="4"/>
+<path d="M82 186l18 40 18-40z" fill="#1d1d1d" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<path d="M70 188l20 58M130 188l-20 58" stroke="#111" stroke-width="4" stroke-linecap="round"/>
+<rect x="88" y="150" width="24" height="34" fill="#c98c62" stroke="#111" stroke-width="4"/>
+<ellipse cx="100" cy="116" rx="38" ry="46" fill="#c98c62" stroke="#111" stroke-width="4"/>
+<path d="M58 122c-2-46 18-74 42-74 30 0 46 26 44 70-8-30-22-44-44-50-14 10-30 26-42 54z" fill="#d9a24e" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<path d="M68 70c8-14 20-22 32-22s26 8 34 22c-10-6-22-8-34-8s-24 2-32 8z" fill="#2b1d14"/>
+<path d="M60 120c-6 40-4 80 2 110l16-4c-6-34-8-70-6-100zM140 120c6 40 4 80-2 110l-16-4c6-34 8-70 6-100z" fill="#d9a24e" stroke="#111" stroke-width="4" stroke-linejoin="round"/>
+<rect x="66" y="100" width="30" height="27" rx="9" fill="#fff" fill-opacity=".35" stroke="#111" stroke-width="3.5"/>
+<rect x="104" y="100" width="30" height="27" rx="9" fill="#fff" fill-opacity=".35" stroke="#111" stroke-width="3.5"/>
+<path d="M96 110h8" stroke="#111" stroke-width="3.5"/>
+<path d="M74 96c4-3 12-3 16 0M110 96c4-3 12-3 16 0" fill="none" stroke="#2b1d14" stroke-width="3.5" stroke-linecap="round"/>
+<circle cx="82" cy="114" r="3.6" fill="#111"/><circle cx="118" cy="114" r="3.6" fill="#111"/>
+<path d="M100 116v12" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+<path d="M90 140c6 5 14 5 20 0" fill="#a8565c" stroke="#111" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

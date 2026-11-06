@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { getTrack, type Track } from '../data/fake.ts'
+import { chiptune } from '../lib/chiptune.ts'
 import { load, save } from '../lib/storage.ts'
 
 // Fake playback: a clock that advances while "playing". Swapped for the Spotify Web Playback SDK later.
@@ -22,6 +23,8 @@ type PlayerApi = {
   playing: boolean
   position: number
   shuffle: boolean
+  muted: boolean
+  setMuted: (v: boolean) => void
   repeat: Repeat
   liked: Set<string>
   loved: Set<string>
@@ -74,6 +77,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [position, setPosition] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [shuffle, setShuffle] = useState(false)
+  const [muted, setMutedState] = useState(() => load('muted', false))
   const [repeat, setRepeat] = useState<Repeat>('off')
   const [liked, toggleLikeRaw] = useStoredSet('liked')
   const [loved, toggleLoveRaw, setLoved] = useStoredSet('loved')
@@ -107,6 +111,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     },
     [queue, shuffle],
   )
+
+  // mockup audio follows play/pause and the current song
+  useEffect(() => {
+    if (playing) chiptune.play(track.id)
+    else chiptune.pause()
+  }, [playing, track.id])
+
+  useEffect(() => {
+    chiptune.setMuted(muted)
+    save('muted', muted)
+  }, [muted])
 
   // the fake clock
   useEffect(() => {
@@ -190,6 +205,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playing,
       position,
       shuffle,
+      muted,
+      setMuted: setMutedState,
       repeat,
       liked,
       loved,
@@ -215,6 +232,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playing,
       position,
       shuffle,
+      muted,
       repeat,
       liked,
       loved,
