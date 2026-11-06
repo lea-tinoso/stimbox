@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AboutWindow, TerminalWindow } from '../components/AboutWindows.tsx'
+import { CollectionWindow } from '../components/CollectionWindow.tsx'
 import { DesktopClutter } from '../components/DesktopClutter.tsx'
 import { Dock } from '../components/Dock.tsx'
 import {
@@ -76,6 +77,7 @@ export default function Desktop() {
         <LibraryWindow />
         <RecentWindow />
         <NewPlaylistWindow />
+        <CollectionWindow />
         <AboutWindow />
         <TerminalWindow />
         <NowPlayingWindow />

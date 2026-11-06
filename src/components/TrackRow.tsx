@@ -25,10 +25,13 @@ export function TrackRow({
   id,
   rank,
   trailing,
+  onPlay,
 }: {
   id: string
   rank?: number
   trailing?: ReactNode
+  // Defaults to slotting the song into the current queue.
+  onPlay?: () => void
 }) {
   const {
     track: current,
@@ -52,7 +55,7 @@ export function TrackRow({
       )}
       <button
         type="button"
-        onClick={() => playTrack(id)}
+        onClick={onPlay ?? (() => playTrack(id))}
         className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
         aria-label={`play ${t.title} by ${t.artist}`}
       >

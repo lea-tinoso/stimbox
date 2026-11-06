@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getTrack, registerTracks, tracks } from '../data/fake.ts'
+import { recentSearches } from '../lib/recentSearches.ts'
 import type { OutTrack } from '../data/spotify-types.ts'
 import { toTrack } from '../data/catalog.ts'
 import { useCatalog } from '../state/catalog.tsx'
@@ -61,6 +62,7 @@ function useSearch(q: string) {
 export function SearchWindow({ query }: { query: string }) {
   const q = query.trim().toLowerCase()
   const { ids, loading } = useSearch(q)
+  const { playTrack } = usePlayer()
   return (
     <Window
       id="search"
@@ -77,7 +79,14 @@ export function SearchWindow({ query }: { query: string }) {
       )}
       <TrackList label="search results">
         {ids.slice(0, 10).map((id) => (
-          <TrackRow key={id} id={id} />
+          <TrackRow
+            key={id}
+            id={id}
+            onPlay={() => {
+              recentSearches.add(q)
+              playTrack(id)
+            }}
+          />
         ))}
       </TrackList>
     </Window>
@@ -469,7 +478,7 @@ export function NewPlaylistWindow() {
 
 // Opened from "more" on listen again: everything played lately, songs and playlists or albums.
 export function RecentWindow() {
-  const { playQueue } = usePlayer()
+  const { openCollection } = useDesktop()
   const { recentSongs, recentCollections } = useCatalog()
   const [tab, setTab] = useState<'songs' | 'collections'>('songs')
   return (
@@ -508,8 +517,8 @@ export function RecentWindow() {
             <li key={c.id}>
               <button
                 type="button"
-                onClick={() => playQueue(c.trackIds)}
-                aria-label={`play ${c.title}`}
+                onClick={() => openCollection(c)}
+                aria-label={`open ${c.title}`}
                 className="flex w-full items-center gap-2.5 px-1.5 py-1 text-left"
               >
                 <Art art={c.art} size={40} />

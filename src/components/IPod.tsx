@@ -5,7 +5,6 @@ import { useCompact } from '../lib/useMedia.ts'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 import { Art } from './Art.tsx'
-import { Reactions } from './Reactions.tsx'
 
 // The small player. Drag it by its body. The screen and menu swap it for the big now playing
 // window, whose yellow light swaps back.
@@ -80,9 +79,6 @@ export function IPod() {
           <span>-{fmt(p.length - p.position)}</span>
         </span>
       </button>
-      <div className="mt-1 w-[206px]">
-        <Reactions variant="lcd" />
-      </div>
 
       <div className="ipod-wheel relative mt-3 size-44 rounded-full border border-hairline/70 text-[11px] font-bold text-mute">
         <button

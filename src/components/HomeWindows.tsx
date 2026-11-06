@@ -10,7 +10,7 @@ import { Window } from './Window.tsx'
 
 export function ListenAgainWindow() {
   const { playQueue } = usePlayer()
-  const { show } = useDesktop()
+  const { show, openCollection } = useDesktop()
   const { listenAgain } = useCatalog()
   return (
     <Window id="listen" title="listen again" width={820} height={252}>
@@ -22,30 +22,30 @@ export function ListenAgainWindow() {
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1">
         {listenAgain.map((c) => (
-          <li key={c.id} className="w-[118px] shrink-0">
+          <li key={c.id} className="group relative w-[118px] shrink-0">
             <button
               type="button"
-              onClick={() => playQueue(c.trackIds)}
-              className="group w-full text-left"
-              aria-label={`play ${c.title}`}
+              onClick={() => openCollection(c)}
+              className="w-full text-left"
+              aria-label={`open ${c.title}`}
             >
-              <span className="relative block">
-                <Art
-                  art={c.art}
-                  size={118}
-                  className="shadow-[0_3px_8px_rgb(0_0_0/0.25)] transition group-hover:brightness-90"
-                />
-                <span
-                  aria-hidden
-                  className="absolute inset-0 hidden place-items-center text-[30px] text-window drop-shadow group-hover:grid"
-                >
-                  ▶
-                </span>
-              </span>
+              <Art
+                art={c.art}
+                size={118}
+                className="shadow-[0_3px_8px_rgb(0_0_0/0.25)] transition group-hover:brightness-90"
+              />
               <span className="mt-1.5 block truncate text-ink">{c.title}</span>
               <span className="block truncate text-[11px] text-mute">
                 {c.subtitle}
               </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => playQueue(c.trackIds)}
+              aria-label={`play ${c.title}`}
+              className="aqua-gel absolute right-1.5 bottom-[52px] grid size-8 place-items-center rounded-full border text-[13px] opacity-0 shadow-window transition group-hover:opacity-100 focus-visible:opacity-100"
+            >
+              ▶
             </button>
           </li>
         ))}
@@ -56,7 +56,7 @@ export function ListenAgainWindow() {
 
 export function ForYouWindow() {
   const [tab, setTab] = useState<'songs' | 'playlists'>('songs')
-  const { playQueue } = usePlayer()
+  const { openCollection } = useDesktop()
   const { forYouSongs, forYouPlaylists, forYouNote } = useCatalog()
   return (
     <Window id="foryou" title="for you" width={404} height={392}>
@@ -84,7 +84,7 @@ export function ForYouWindow() {
             <li key={p.id}>
               <button
                 type="button"
-                onClick={() => playQueue(p.trackIds)}
+                onClick={() => openCollection(p)}
                 className="flex w-full items-center gap-2.5 px-1.5 py-1.5 text-left"
               >
                 <Art art={p.art} size={44} />
