@@ -55,9 +55,13 @@ export function DesktopClutter() {
         <div className="absolute top-[360px] right-[60px] rotate-[-4deg] bg-yellow px-3.5 py-3 font-hand text-[22px] leading-none text-ink shadow-sticker">
           ♥ = saved to loved
         </div>
-        <span className="absolute top-8 right-[150px] rotate-[-8deg] text-[44px]">
-          🐱
-        </span>
+        <img
+          src="/kitten.jpg"
+          alt=""
+          width={76}
+          height={76}
+          className="absolute top-9 right-[140px] rotate-[-8deg] rounded-[3px] shadow-sticker"
+        />
         <span className="absolute bottom-6 left-8 text-[44px]">🖥️</span>
         <span className="absolute right-[330px] bottom-8 text-[36px]">👾</span>
         <span className="absolute right-6 bottom-10 text-[14px] text-body">
