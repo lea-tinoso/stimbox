@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { currentLine, fmt, getTrack, lyricsFor } from '../data/fake.ts'
+import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 import { Art } from './Art.tsx'
 import { Pill, Segmented } from './Pill.tsx'
@@ -9,6 +10,7 @@ import { Window } from './Window.tsx'
 
 export function NowPlayingWindow() {
   const p = usePlayer()
+  const { toIpod } = useDesktop()
   const [tab, setTab] = useState<'lyrics' | 'next'>('lyrics')
   const lines = useMemo(() => lyricsFor(p.track), [p.track])
   const cur = currentLine(lines, p.position)
@@ -26,6 +28,8 @@ export function NowPlayingWindow() {
       title={`now playing — ${p.track.title}`}
       width={1040}
       height={740}
+      onClose={toIpod}
+      onMinimize={toIpod}
       bodyClassName="!p-6 flex gap-7 max-[900px]:flex-col max-[900px]:!p-3"
     >
       <div className="w-[420px] shrink-0 max-[900px]:w-full">

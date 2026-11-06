@@ -11,20 +11,21 @@ import { IPod } from '../components/IPod.tsx'
 import { LibraryWindow, SearchWindow } from '../components/LibraryWindows.tsx'
 import { MenuBar } from '../components/MenuBar.tsx'
 import { NowPlayingWindow } from '../components/NowPlayingWindow.tsx'
+import { Signature } from '../components/Signature.tsx'
 import { Wallpaper } from '../components/Wallpaper.tsx'
 import { useCompact } from '../lib/useMedia.ts'
 import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 
 function useShortcuts() {
-  const { show } = useDesktop()
+  const { toBigPlayer } = useDesktop()
   const { toggle, next, prev } = usePlayer()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing = (e.target as HTMLElement).closest('input, textarea')
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'l') {
         e.preventDefault()
-        show('nowplaying')
+        toBigPlayer()
       } else if (!typing && e.key === ' ') {
         e.preventDefault()
         toggle()
@@ -33,7 +34,7 @@ function useShortcuts() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [show, toggle, next, prev])
+  }, [toBigPlayer, toggle, next, prev])
 }
 
 export default function Desktop() {
@@ -46,6 +47,7 @@ export default function Desktop() {
       <Wallpaper />
       <MenuBar query={query} onQuery={setQuery} />
       {!compact && <DesktopClutter />}
+      {!compact && <Signature />}
       <main
         className={
           compact

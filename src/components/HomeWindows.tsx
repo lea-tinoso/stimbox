@@ -64,7 +64,7 @@ export function ForYouWindow() {
   const [tab, setTab] = useState<'songs' | 'playlists'>('songs')
   const { playQueue } = usePlayer()
   return (
-    <Window id="foryou" title="for you" width={404} height={470}>
+    <Window id="foryou" title="for you" width={404} height={392}>
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <Segmented
           label="show"
@@ -149,7 +149,7 @@ function Move({ move }: { move: number | 'new' }) {
 export function TrendingWindow() {
   const [region, setRegion] = useState<'ph' | 'asia' | 'world'>('ph')
   return (
-    <Window id="trending" title="trending" width={404} height={470}>
+    <Window id="trending" title="trending" width={404} height={392}>
       <div className="mb-2.5">
         <Segmented
           label="region"

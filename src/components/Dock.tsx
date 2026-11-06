@@ -15,7 +15,7 @@ const items: { icon: string; label: string; opens: WinId[] }[] = [
 ]
 
 export function Dock() {
-  const { open, show } = useDesktop()
+  const { open, show, toBigPlayer } = useDesktop()
   const running = (ids: WinId[]) => ids.some((id) => open.has(id))
 
   return (
@@ -27,7 +27,11 @@ export function Dock() {
         <button
           key={it.label}
           type="button"
-          onClick={() => it.opens.forEach(show)}
+          onClick={() =>
+            it.opens[0] === 'nowplaying'
+              ? toBigPlayer()
+              : it.opens.forEach(show)
+          }
           className="group relative -mt-4 size-16 origin-bottom transition-transform duration-150 hover:-translate-y-1.5 hover:scale-110"
           aria-label={it.label}
         >

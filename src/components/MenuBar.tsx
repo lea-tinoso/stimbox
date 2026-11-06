@@ -23,7 +23,7 @@ export function MenuBar({
   onQuery: (q: string) => void
 }) {
   const { show, reset } = useDesktop()
-  const { track, playing, toggle } = usePlayer()
+  const { track, playing, toggle, muted, setMuted } = usePlayer()
   const clock = useClock()
 
   return (
@@ -48,6 +48,14 @@ export function MenuBar({
         onClick={() => show('stats')}
       >
         your algorithm
+      </button>
+      <button
+        type="button"
+        className="hidden sm:block"
+        aria-pressed={!muted}
+        onClick={() => setMuted(!muted)}
+      >
+        {muted ? 'sound off' : 'sound on'}
       </button>
       <button type="button" className="hidden md:block" onClick={reset}>
         tidy desktop
