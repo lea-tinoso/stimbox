@@ -61,9 +61,19 @@ class SpotifyEmbed {
     this.host = new Promise((resolve) => (this.setHostEl = resolve))
   }
 
-  // Called once by <SpotifyEmbedHost> with the element the player lives in.
+  // Called by <SpotifyEmbedHost> with the element the player lives in. If that element is ever
+  // replaced, the old player went with it: start over in the new one on the next play.
+  private hostEl: HTMLElement | null = null
   setHost(el: HTMLElement) {
-    this.setHostEl(el)
+    if (this.hostEl === el) return
+    if (this.hostEl) {
+      log('player host replaced, starting a new player')
+      this.host = Promise.resolve(el)
+      this.controller = null
+      this.uri = ''
+      this.started = false
+    } else this.setHostEl(el)
+    this.hostEl = el
   }
 
   private expectReady() {

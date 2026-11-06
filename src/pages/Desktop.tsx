@@ -58,14 +58,29 @@ export default function Desktop() {
   const phone = usePhone()
   useShortcuts()
 
-  if (phone)
-    return (
-      <>
+  // Spotify's player stays in the same place in both layouts: if it were rebuilt when the
+  // window crosses the phone width, the song would stop.
+  return (
+    <>
+      {phone ? (
         <PhoneIPod />
-        <SpotifyEmbedHost />
-      </>
-    )
+      ) : (
+        <DesktopLayout query={query} onQuery={setQuery} compact={compact} />
+      )}
+      <SpotifyEmbedHost />
+    </>
+  )
+}
 
+function DesktopLayout({
+  query,
+  onQuery: setQuery,
+  compact,
+}: {
+  query: string
+  onQuery: (q: string) => void
+  compact: boolean
+}) {
   return (
     <div className="relative h-full overflow-hidden bg-desk">
       <Wallpaper />
@@ -98,7 +113,6 @@ export default function Desktop() {
         {!compact && <IPod />}
       </main>
       <Dock />
-      <SpotifyEmbedHost />
     </div>
   )
 }
