@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { AboutWindow, TerminalWindow } from '../components/AboutWindows.tsx'
 import { DesktopClutter } from '../components/DesktopClutter.tsx'
 import { Dock } from '../components/Dock.tsx'
 import {
@@ -23,7 +24,7 @@ import { useDesktop } from '../state/desktop.tsx'
 import { usePlayer } from '../state/player.tsx'
 
 function useShortcuts() {
-  const { toBigPlayer } = useDesktop()
+  const { toBigPlayer, open, show, hide } = useDesktop()
   const { toggle, next, prev } = usePlayer()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -31,6 +32,11 @@ function useShortcuts() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'l') {
         e.preventDefault()
         toBigPlayer()
+      } else if (!typing && e.key === '`') {
+        // A hidden console key, like in PC games: toggles the stats-for-nerds terminal.
+        e.preventDefault()
+        if (open.has('terminal')) hide('terminal')
+        else show('terminal')
       } else if (!typing && e.key === ' ') {
         e.preventDefault()
         toggle()
@@ -39,7 +45,7 @@ function useShortcuts() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [toBigPlayer, toggle, next, prev])
+  }, [toBigPlayer, toggle, next, prev, open, show, hide])
 }
 
 export default function Desktop() {
@@ -70,6 +76,8 @@ export default function Desktop() {
         <LibraryWindow />
         <RecentWindow />
         <NewPlaylistWindow />
+        <AboutWindow />
+        <TerminalWindow />
         <NowPlayingWindow />
         {!compact && <IPod />}
       </main>

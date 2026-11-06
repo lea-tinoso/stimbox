@@ -1,6 +1,27 @@
 // Mockup audio: a tiny chiptune generated in the browser, one melody per song.
 // No audio files and nothing copyrighted. Replaced by real playback when Spotify is connected.
 
+const SCALE_NAMES = [
+  'major pentatonic',
+  'minor pentatonic',
+  'hirajoshi',
+  'major',
+]
+const NOTE_NAMES = [
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B',
+]
+
 const SCALES = [
   [0, 2, 4, 7, 9], // major pentatonic
   [0, 3, 5, 7, 10], // minor pentatonic
@@ -27,6 +48,7 @@ function rng(seed: number) {
 
 type Song = {
   bpm: number
+  scale: string
   root: number
   lead: (number | null)[]
   bass: number[]
@@ -35,7 +57,8 @@ type Song = {
 
 function compose(id: string): Song {
   const r = rng(hash(id))
-  const scale = SCALES[Math.floor(r() * SCALES.length)]
+  const pick = Math.floor(r() * SCALES.length)
+  const scale = SCALES[pick]
   const root = 57 + Math.floor(r() * 7) // around A3..D#4
   const bpm = 92 + Math.floor(r() * 50)
   const motif = Array.from({ length: 8 }, () =>
@@ -53,7 +76,14 @@ function compose(id: string): Song {
   ]
   const prog = [0, 5, 3, 4].map((d) => scale[d % scale.length] - 12)
   const bass = prog.flatMap((n) => Array(8).fill(n))
-  return { bpm, root, lead, bass, wave: r() < 0.5 ? 'square' : 'triangle' }
+  return {
+    bpm,
+    scale: SCALE_NAMES[pick],
+    root,
+    lead,
+    bass,
+    wave: r() < 0.5 ? 'square' : 'triangle',
+  }
 }
 
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12)
@@ -67,6 +97,23 @@ class Chiptune {
   private nextTime = 0
   private songId = ''
   private volume = 0.08
+  // Counted for the stats-for-nerds terminal.
+  notesPlayed = 0
+  private live = new Set<OscillatorNode>()
+
+  // A snapshot of the engine for the stats-for-nerds terminal.
+  stats() {
+    const song = this.song
+    return {
+      bpm: song?.bpm ?? 0,
+      key: song ? `${NOTE_NAMES[song.root % 12]} ${song.scale}` : '—',
+      wave: song?.wave ?? '—',
+      live: this.live.size,
+      played: this.notesPlayed,
+      sampleRate: this.ctx?.sampleRate ?? 0,
+      state: this.ctx?.state ?? 'not started',
+    }
+  }
 
   private ensure() {
     if (!this.ctx) {
@@ -100,6 +147,9 @@ class Chiptune {
     osc.connect(g).connect(this.master!)
     osc.start(at)
     osc.stop(at + dur + 0.02)
+    this.notesPlayed++
+    this.live.add(osc)
+    osc.onended = () => this.live.delete(osc)
   }
 
   private tick = () => {

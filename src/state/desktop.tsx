@@ -21,6 +21,10 @@ export type WinId =
   | 'ipod'
   | 'recent'
   | 'newplaylist'
+  | 'about'
+  | 'terminal'
+
+export const WINDOW_COUNT = 12
 
 export type WinPos = { x: number; y: number }
 
@@ -35,6 +39,8 @@ const DEFAULT_POS: Record<WinId, WinPos> = {
   ipod: { x: 1186, y: 400 },
   recent: { x: 180, y: 70 },
   newplaylist: { x: 520, y: 140 },
+  about: { x: 540, y: 90 },
+  terminal: { x: 470, y: 110 },
 }
 
 const DEFAULT_OPEN: WinId[] = ['listen', 'foryou', 'trending', 'stats', 'ipod']

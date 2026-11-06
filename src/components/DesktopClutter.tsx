@@ -51,6 +51,15 @@ export function DesktopClutter() {
           <span className="rounded-sm bg-window/70 px-1">ipod</span>
         </button>
       </div>
+      <button
+        type="button"
+        onClick={() => show('terminal')}
+        aria-label="open terminal: stats for nerds"
+        className="fixed top-[300px] right-[150px] z-[5] w-24 text-center text-[11px] text-body"
+      >
+        <DesktopIcon src="/icons/terminal.png" />
+        <span className="rounded-sm bg-window/70 px-1">terminal</span>
+      </button>
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-[4] select-none"
