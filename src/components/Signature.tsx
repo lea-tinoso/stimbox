@@ -29,8 +29,8 @@ export function Signature() {
           </p>
         </div>
         <p className="mt-1.5 font-hand text-[19px] leading-[1.1] text-body">
-          software engineer who loops one song until her ai agents ship the
-          feature. currently on play 48 ♪
+          not the biggest fan of youtube music’s ui, so i built this instead of
+          touching grass
         </p>
         <p className="mt-2 text-[11px] text-mute">
           <button
