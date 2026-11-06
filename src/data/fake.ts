@@ -26,6 +26,8 @@ export type Collection = {
   subtitle: string
   art: Art
   trackIds: string[]
+  // lea's own Spotify playlist: she can add songs to it
+  owned?: boolean
 }
 
 export type ChartEntry = { trackId: string; move: number | 'new' }

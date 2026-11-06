@@ -7,6 +7,7 @@ import {
   type Collection,
 } from '../data/fake.ts'
 import { hiddenPlaylists } from '../lib/hiddenPlaylists.ts'
+import { ownerFetch, useIsOwner } from '../lib/owner.ts'
 import { recentSearches } from '../lib/recentSearches.ts'
 import type { OutResult, OutTrack, SearchData } from '../data/spotify-types.ts'
 import { toTrack } from '../data/catalog.ts'
@@ -404,7 +405,39 @@ export function LibraryWindow() {
   } = usePlaylists()
   const { show, openCollection } = useDesktop()
   const { spotifyPlaylists } = useCatalog()
+  const owner = useIsOwner()
   const [setToast, toast] = useUndo()
+  // Visitors hide a Spotify playlist in their browser. lea's browser deletes it on Spotify too
+  // (Spotify calls it unfollowing, so undo follows it again).
+  const deleteSpotify = (c: Collection) => {
+    const unhide = hiddenPlaylists.hide(c.id)
+    if (!owner)
+      return setToast({
+        text: `deleted ${c.title} from stimbox · still on spotify`,
+        undo: unhide,
+      })
+    const url = `/api/spotify/playlist?id=${c.id.replace(/^pl-/, '')}`
+    const done = ownerFetch(url, { method: 'DELETE' })
+      .then((r) => r.ok)
+      .catch(() => false)
+    void done.then(
+      (ok) =>
+        !ok &&
+        setToast({
+          text: `spotify didn’t delete ${c.title} · hidden here only`,
+          undo: unhide,
+        }),
+    )
+    setToast({
+      text: `deleted ${c.title} from spotify`,
+      undo: () => {
+        unhide()
+        void done.then((ok) => {
+          if (ok) void ownerFetch(url, { method: 'PUT' }).catch(() => {})
+        })
+      },
+    })
+  }
 
   const lists = {
     loved: { ids: loved, toggle: toggleLove },
@@ -470,12 +503,7 @@ export function LibraryWindow() {
                     </button>
                     <RemoveButton
                       label={`delete playlist ${c.title}`}
-                      onClick={() =>
-                        setToast({
-                          text: `deleted ${c.title} from stimbox · still on spotify`,
-                          undo: hiddenPlaylists.hide(c.id),
-                        })
-                      }
+                      onClick={() => deleteSpotify(c)}
                     />
                   </li>
                 ))}

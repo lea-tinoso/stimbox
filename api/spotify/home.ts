@@ -31,7 +31,8 @@ export async function GET() {
     '6m': 'medium_term',
     '1y': 'long_term',
   } as const
-  const [recentRes, playlistsRes, likedRes, ...topRes] = await Promise.all([
+  const [me, recentRes, playlistsRes, likedRes, ...topRes] = await Promise.all([
+    spotify<{ id: string }>('/me'),
     spotify<Paged<{ track: SpotifyTrack; played_at: string }>>(
       '/me/player/recently-played?limit=50',
     ),
@@ -40,7 +41,7 @@ export async function GET() {
         id: string
         name: string
         images: Image[] | null
-        owner?: { display_name?: string }
+        owner?: { id?: string; display_name?: string }
       }>
     >('/me/playlists?limit=20'),
     spotify<Paged<{ track: SpotifyTrack }>>('/me/tracks?limit=50'),
@@ -72,6 +73,7 @@ export async function GET() {
         subtitle: 'playlist',
         image: pick(p.images ?? []),
         trackIds: ids((res?.items ?? []).map((e) => add(e.item ?? e.track))),
+        owned: !!me && p.owner?.id === me.id,
       }
     }),
   )
@@ -128,7 +130,7 @@ export async function GET() {
   const data: HomeData = {
     tracks: [...tracks.values()],
     recent,
-    playlists: playlists.filter((p) => p.trackIds.length > 0),
+    playlists: playlists.filter((p) => p.trackIds.length > 0 || p.owned),
     recentAlbums: recentAlbums.filter((a) => a.trackIds.length > 0),
     liked,
     top,

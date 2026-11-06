@@ -134,6 +134,7 @@ const toCollection = (c: HomeData['playlists'][number]): Collection => ({
   subtitle: c.subtitle.toLowerCase(),
   art: art(c.image, 'art-6'),
   trackIds: c.trackIds,
+  owned: c.owned,
 })
 
 export function fromSpotify(d: HomeData): Catalog {

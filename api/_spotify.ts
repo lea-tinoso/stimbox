@@ -11,6 +11,9 @@ export const SCOPES = [
   'user-library-read',
   'playlist-read-private',
   'playlist-read-collaborative',
+  // For lea only (owner key): add songs to her playlists and delete them.
+  'playlist-modify-public',
+  'playlist-modify-private',
 ].join(' ')
 
 export function env(name: string) {
@@ -93,6 +96,40 @@ export async function spotify<T>(path: string): Promise<T | null> {
     console.warn(`spotify ${path} failed`, e)
     return null
   }
+}
+
+// A change to lea's Spotify (add a song, delete a playlist). Returns whether Spotify said ok.
+export async function spotifyWrite(
+  method: 'POST' | 'PUT' | 'DELETE',
+  path: string,
+  body?: unknown,
+) {
+  try {
+    const res = await fetch(`${API}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${await accessToken()}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    if (!res.ok) console.warn(`spotify ${method} ${path} → ${res.status}`)
+    return res.ok
+  } catch (e) {
+    console.warn(`spotify ${method} ${path} failed`, e)
+    return false
+  }
+}
+
+// Only lea may change her Spotify. Her browser sends the STIMBOX_OWNER_KEY env var's value.
+export function isOwner(request: Request) {
+  const key = env('STIMBOX_OWNER_KEY')
+  const sent = request.headers.get('x-stimbox-owner') ?? ''
+  if (key.length < 12 || sent.length !== key.length) return false
+  let diff = 0
+  for (let i = 0; i < key.length; i++)
+    diff |= key.charCodeAt(i) ^ sent.charCodeAt(i)
+  return diff === 0
 }
 
 export function json(data: unknown, init: ResponseInit = {}) {

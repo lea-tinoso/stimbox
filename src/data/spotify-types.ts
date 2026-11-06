@@ -17,6 +17,8 @@ export type OutCollection = {
   subtitle: string
   image: string
   trackIds: string[]
+  // lea's own playlist, so she can add songs to it
+  owned?: boolean
 }
 // A playlist, album or artist in search results. Its songs load when it's opened.
 export type OutResult = {
