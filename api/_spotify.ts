@@ -14,6 +14,8 @@ export const SCOPES = [
   // For lea only (owner key): add songs to her playlists and delete them.
   'playlist-modify-public',
   'playlist-modify-private',
+  'user-follow-read',
+  'user-follow-modify',
 ].join(' ')
 
 export function env(name: string) {

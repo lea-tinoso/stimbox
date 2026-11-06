@@ -25,8 +25,10 @@ export type WinId =
   | 'about'
   | 'terminal'
   | 'collection'
+  | 'song'
+  | 'artist'
 
-export const WINDOW_COUNT = 13
+export const WINDOW_COUNT = 15
 
 export type WinPos = { x: number; y: number }
 
@@ -44,6 +46,8 @@ const DEFAULT_POS: Record<WinId, WinPos> = {
   about: { x: 540, y: 90 },
   terminal: { x: 470, y: 110 },
   collection: { x: 330, y: 60 },
+  song: { x: 360, y: 80 },
+  artist: { x: 300, y: 50 },
 }
 
 const DEFAULT_OPEN: WinId[] = ['listen', 'foryou', 'trending', 'stats', 'ipod']
@@ -64,6 +68,11 @@ type DesktopApi = {
   // The playlist or album shown in the playlist window.
   collection: Collection | null
   openCollection: (c: Collection) => void
+  // the song or artist page opened from a name in a song row
+  song: string | null
+  openSong: (id: string) => void
+  artist: string | null
+  openArtist: (name: string) => void
 }
 
 // Bring a window back on screen if it was dragged away or the browser got smaller.
@@ -87,6 +96,8 @@ export function DesktopProvider({ children }: { children: ReactNode }) {
   }))
 
   const [collection, setCollection] = useState<Collection | null>(null)
+  const [song, setSong] = useState<string | null>(null)
+  const [artist, setArtist] = useState<string | null>(null)
 
   const focus = useCallback((id: WinId) => {
     setOrder((o) => {
@@ -160,6 +171,21 @@ export function DesktopProvider({ children }: { children: ReactNode }) {
     [show],
   )
 
+  const openSong = useCallback(
+    (id: string) => {
+      setSong(id)
+      show('song')
+    },
+    [show],
+  )
+  const openArtist = useCallback(
+    (name: string) => {
+      setArtist(name)
+      show('artist')
+    },
+    [show],
+  )
+
   const api = useMemo<DesktopApi>(
     () => ({
       open,
@@ -174,6 +200,10 @@ export function DesktopProvider({ children }: { children: ReactNode }) {
       toBigPlayer,
       collection,
       openCollection,
+      song,
+      openSong,
+      artist,
+      openArtist,
       zOf: (id) => 10 + Math.max(0, order.indexOf(id)),
     }),
     [
@@ -189,6 +219,10 @@ export function DesktopProvider({ children }: { children: ReactNode }) {
       toBigPlayer,
       collection,
       openCollection,
+      song,
+      openSong,
+      artist,
+      openArtist,
     ],
   )
   return <DesktopContext value={api}>{children}</DesktopContext>

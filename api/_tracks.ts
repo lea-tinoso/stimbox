@@ -32,6 +32,7 @@ export function toOut(
     year: Number(al?.release_date?.slice(0, 4)) || 0,
     image: pick(al?.images),
     duration: Math.round(t.duration_ms / 1000),
+    albumId: al?.id,
   }
 }
 

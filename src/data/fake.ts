@@ -15,6 +15,7 @@ export type Track = {
   duration: number // seconds
   // Spotify track URI. Demo songs have none and play as chiptune.
   uri?: string
+  albumId?: string
 }
 
 export type LyricLine = { at: number; text: string }

@@ -61,6 +61,7 @@ export function toTrack(t: HomeData['tracks'][number]): Track {
     year: t.year,
     art: art(t.image, 'art-3'),
     duration: t.duration,
+    albumId: t.albumId,
   }
 }
 

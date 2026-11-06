@@ -9,6 +9,7 @@ export type OutTrack = {
   year: number
   image: string
   duration: number
+  albumId?: string
 }
 export type OutCollection = {
   id: string
@@ -33,6 +34,19 @@ export type SearchData = {
   playlists: OutResult[]
   albums: OutResult[]
   artists: OutResult[]
+}
+// An artist's page: Spotify for the music, Last.fm for listeners, bio and similar artists.
+export type ArtistData = {
+  id: string
+  name: string
+  image: string
+  url: string
+  songs: OutTrack[]
+  albums: OutResult[]
+  listeners: number | null
+  bio: string
+  similar: string[]
+  following: boolean | null
 }
 export type HomeData = {
   tracks: OutTrack[]
