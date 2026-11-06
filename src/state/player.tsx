@@ -8,7 +8,13 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { demoIds, getTrack, registerTracks, type Track } from '../data/fake.ts'
+import {
+  demoIds,
+  getTrack,
+  registerTracks,
+  trackById,
+  type Track,
+} from '../data/fake.ts'
 import { toTrack } from '../data/catalog.ts'
 import type { OutTrack } from '../data/spotify-types.ts'
 import { chiptune } from '../lib/chiptune.ts'
@@ -81,10 +87,18 @@ function useStoredSet(key: string) {
 }
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const [queue, setQueue] = useState<string[]>(() =>
-    load('queue', DEFAULT_QUEUE),
+  // The queue is saved by song id; Spotify songs' details are saved alongside so a reload can
+  // still show them (otherwise unknown ids fell back to the first demo song, "best part").
+  const [queue, setQueue] = useState<string[]>(() => {
+    registerTracks(load<Track[]>('queueTracks', []))
+    const known = load<string[]>('queue', DEFAULT_QUEUE).filter((id) =>
+      trackById.has(id),
+    )
+    return known.length ? known : DEFAULT_QUEUE
+  })
+  const [index, setIndex] = useState(() =>
+    Math.min(load('index', 0), queue.length - 1),
   )
-  const [index, setIndex] = useState(() => load('index', 0))
   const [position, setPosition] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [shuffle, setShuffle] = useState(false)
@@ -116,6 +130,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     save('queue', queue)
+    save(
+      'queueTracks',
+      queue.filter((id) => !demoIds.has(id)).map((id) => trackById.get(id)),
+    )
     save('index', index)
   }, [queue, index])
 
