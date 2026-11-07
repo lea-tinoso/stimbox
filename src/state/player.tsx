@@ -105,20 +105,26 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [muted, setMutedState] = useState(() => load('muted', false))
   const [repeat, setRepeat] = useState<Repeat>('off')
   const [liked, toggleLikeRaw] = useStoredSet('liked')
-  const [loved, toggleLoveRaw, setLoved] = useStoredSet('loved')
+  const [loved, toggleLoveRaw] = useStoredSet('loved')
   const [disliked, toggleDislikeRaw] = useStoredSet('disliked')
   // How long Spotify says the current song is: 30 s when it only gave a preview.
   const [heard, setHeard] = useState({ uri: '', length: 0 })
   const { starter } = useCatalog()
 
-  // When lea's Spotify music arrives, swap a demo queue for her recent songs.
+  // When lea's Spotify music arrives, drop demo songs from the queue (a saved queue can mix the
+  // two, which showed "best part" in up next), or swap an all-demo queue for her recent songs.
   const [seeded, setSeeded] = useState<string[]>([])
   if (starter.length && seeded !== starter) {
     setSeeded(starter)
-    if (queue.every((id) => demoIds.has(id))) {
+    const real = queue.filter((id) => !demoIds.has(id))
+    if (!real.length) {
       setQueue(starter)
       setIndex(0)
       setPosition(0)
+    } else if (real.length < queue.length) {
+      const now = queue[index]
+      setQueue(real)
+      setIndex(Math.max(0, real.indexOf(now)))
     }
   }
 
@@ -302,9 +308,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (radio.page < 4)
           return setRadio({ ...radio, page: radio.page + 1, misses })
         // This seed is used up: carry on from a song from this batch, or from the queue.
-        const pool = fresh.length
-          ? fresh
-          : queue.filter((id) => id !== radio.seed)
+        const pool = (fresh.length ? fresh : queue).filter(
+          (id) => id !== radio.seed && !!getTrack(id).uri,
+        )
         const next = pool[Math.floor(Math.random() * pool.length)]
         setRadio(next ? { seed: next, page: 0, misses } : null)
       })
@@ -356,30 +362,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [queue, index, playRadio],
   )
 
-  const toggleLove = useCallback(
-    (id: string) => {
-      // love = saved to the "loved" playlist, and it also counts as a like
-      toggleLoveRaw(id)
-      if (!loved.has(id) && !liked.has(id)) toggleLikeRaw(id)
-    },
-    [loved, liked, toggleLoveRaw, toggleLikeRaw],
-  )
-
-  const toggleLike = useCallback(
-    (id: string) => {
-      toggleLikeRaw(id)
-      if (liked.has(id) && loved.has(id)) {
-        // un-liking also un-loves
-        setLoved((prev) => {
-          const s = new Set(prev)
-          s.delete(id)
-          save('loved', [...s])
-          return s
-        })
-      }
-    },
-    [liked, loved, toggleLikeRaw, setLoved],
-  )
+  // Love (the "loved" playlist) and like are separate: loving a song doesn't like it.
+  const toggleLove = toggleLoveRaw
+  const toggleLike = toggleLikeRaw
 
   const toggleDislike = useCallback(
     (id: string) => {
