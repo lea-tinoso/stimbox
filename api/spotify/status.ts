@@ -61,5 +61,41 @@ export async function GET() {
         ? 'spotify refuses to read the account: the app owner needs an active Premium plan, and the account must be listed under User Management in the spotify dashboard'
         : 'spotify could not read the account: see account below',
     )
+  // /me can work while the rest is blocked, so also try what the app uses: search and lea's music.
+  const probe = async (path: string) => {
+    const r = await fetch(`https://api.spotify.com/v1${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return r.ok
+      ? { ok: true }
+      : {
+          ok: false,
+          status: r.status,
+          retryAfterSeconds: r.headers.get('retry-after'),
+          body: (await r.text()).slice(0, 200),
+        }
+  }
+  const checks = {
+    search: await probe('/search?q=love&type=track&limit=1'),
+    recentlyPlayed: await probe('/me/player/recently-played?limit=1'),
+    topTracks: await probe('/me/top/tracks?limit=1'),
+  }
+  report.checks = checks
+  const failed = Object.values(checks).filter((c) => !c.ok) as {
+    status: number
+    retryAfterSeconds: string | null
+  }[]
+  if (failed.some((c) => c.status === 429)) {
+    const wait = Math.max(
+      ...failed.map((c) => Number(c.retryAfterSeconds) || 0),
+    )
+    return send(
+      `spotify is rate limiting this app (too many calls)${wait ? `: it says to wait ${Math.ceil(wait / 60)} min` : ''}. stimbox shows demo music until it lifts`,
+    )
+  }
+  if (failed.length)
+    return send(
+      'the account works but some spotify calls fail: see checks below',
+    )
   return send('connected: spotify works on this deployment')
 }

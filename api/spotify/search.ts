@@ -33,7 +33,11 @@ export async function GET(request: Request) {
   }>(
     `/search?type=track,playlist,album,artist&limit=10&q=${encodeURIComponent(q)}`,
   )
-  if (!res) return json(empty)
+  if (!res)
+    return json(
+      { ...empty, error: 'spotify unavailable, try again' },
+      { status: 502, headers: { 'Cache-Control': 'no-store' } },
+    )
   // New apps get 10 per call, so fetch two more pages of songs.
   const more = await Promise.all(
     [10, 20].map((offset) =>

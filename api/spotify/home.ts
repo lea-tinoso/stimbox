@@ -135,5 +135,14 @@ export async function GET() {
     liked,
     top,
   }
+  // If Spotify didn't answer (a hiccup, rate limit or token problem), say so instead of sending
+  // an empty library: an empty answer would be cached and show demo music to every visitor.
+  if (!me || !data.tracks.length) {
+    console.warn('home: spotify gave nothing back, not caching')
+    return json(
+      { error: 'spotify unavailable, try again' },
+      { status: 502, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
   return json(data, { headers: CACHE })
 }
