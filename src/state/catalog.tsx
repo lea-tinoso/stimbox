@@ -19,13 +19,24 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<HomeData | null>(null)
   useEffect(() => {
     const ctl = new AbortController()
-    fetch('/api/spotify/home', { signal: ctl.signal })
-      .then((r) => (r.ok ? (r.json() as Promise<HomeData>) : null))
-      .then((d) => d && Array.isArray(d.tracks) && setData(d))
-      .catch(() => {
-        // offline, local dev or not set up yet: keep the demo data
-      })
-    return () => ctl.abort()
+    let timer = 0
+    // If Spotify hiccups, try again a few times before settling for the demo data.
+    const load = (tries: number) =>
+      fetch('/api/spotify/home', { signal: ctl.signal })
+        .then((r) => (r.ok ? (r.json() as Promise<HomeData>) : null))
+        .then((d) => {
+          if (d && Array.isArray(d.tracks) && d.tracks.length) setData(d)
+          else if (tries > 0)
+            timer = window.setTimeout(() => void load(tries - 1), 4000)
+        })
+        .catch(() => {
+          // offline, local dev or not set up yet: keep the demo data
+        })
+    void load(3)
+    return () => {
+      ctl.abort()
+      window.clearTimeout(timer)
+    }
   }, [])
   const hidden = useHiddenPlaylists()
   const adds = useSpotifyAdds()
