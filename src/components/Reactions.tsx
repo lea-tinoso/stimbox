@@ -1,6 +1,6 @@
 import { usePlayer } from '../state/player.tsx'
 
-// Dislike, like, love for the current song. Love saves to "loved" and also likes it.
+// Dislike, like, love for the current song. Love saves to "loved"; it is separate from like.
 export function Reactions({ variant }: { variant: 'lcd' | 'aqua' }) {
   const {
     track,
