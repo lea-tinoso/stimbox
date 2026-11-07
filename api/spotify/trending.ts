@@ -1,5 +1,5 @@
 import { find, lastfm } from '../_lastfm.js'
-import { configured, env, json } from '../_spotify.js'
+import { configured, env, json, NO_STORE } from '../_spotify.js'
 import { present, toOut } from '../_tracks.js'
 
 // Trending songs. Spotify has no charts API and new apps can't open its Top 50 playlists, so
@@ -72,12 +72,19 @@ export async function GET(request: Request) {
       )
     ).map((t) => toOut(t)),
   ).filter((t, i, a) => a.findIndex((x) => x.id === t.id) === i)
+  // Spotify search failed (quota): don't keep an empty chart for hours.
+  if (!tracks.length)
+    return json(
+      { tracks, error: 'spotify unavailable' },
+      { status: 502, headers: NO_STORE },
+    )
   // Charts move slowly: ask Last.fm at most every few hours.
   return json(
     { tracks },
     {
       headers: {
-        'Cache-Control': 'public, s-maxage=21600, stale-while-revalidate=86400',
+        'Cache-Control':
+          'public, s-maxage=43200, stale-while-revalidate=172800',
       },
     },
   )

@@ -83,20 +83,36 @@ export function configured() {
   )
 }
 
+// Spotify gives new apps a small daily search quota (a 429 QUOTA_EXCEEDED that lasts hours), and
+// radio, trending and artist pages all search. So each warm instance remembers search answers, and
+// stops searching while Spotify says to wait instead of piling on more calls.
+const searches = new Map<string, unknown>()
+let searchBlockedUntil = 0
+
 // GET a Web API path. Returns null on any error so one failing section doesn't break the page.
 export async function spotify<T>(path: string): Promise<T | null> {
+  const isSearch = path.startsWith('/search')
+  if (isSearch) {
+    if (searches.has(path)) return searches.get(path) as T
+    if (Date.now() < searchBlockedUntil) return null
+  }
   try {
     const res = await fetch(`${API}${path}`, {
       headers: { Authorization: `Bearer ${await accessToken()}` },
     })
     if (!res.ok) {
-      console.warn(
-        `spotify ${path} → ${res.status}`,
-        res.headers.get('retry-after') ?? '',
-      )
+      const wait = Number(res.headers.get('retry-after')) || 60
+      console.warn(`spotify ${path} → ${res.status}, retry after ${wait}s`)
+      if (res.status === 429 && isSearch)
+        searchBlockedUntil = Date.now() + wait * 1000
       return null
     }
-    return (await res.json()) as T
+    const data = (await res.json()) as T
+    if (isSearch) {
+      if (searches.size > 2000) searches.clear()
+      searches.set(path, data)
+    }
+    return data
   } catch (e) {
     console.warn(`spotify ${path} failed`, e)
     return null
@@ -145,6 +161,13 @@ export function json(data: unknown, init: ResponseInit = {}) {
 }
 
 // Shared CDN cache: Spotify is asked at most every few minutes, however many people visit.
+// For answers built from searches (search box, radio, artist pages): they barely change, and every
+// cache miss spends search quota.
+export const LONG_CACHE = {
+  'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+}
+export const NO_STORE = { 'Cache-Control': 'no-store' }
+
 export const CACHE = {
   'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',
 }

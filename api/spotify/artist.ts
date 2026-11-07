@@ -128,7 +128,9 @@ export async function GET(request: Request) {
     following: await isFollowing(artist.id),
   }
   return json(data, {
-    headers: isOwner(request) ? { 'Cache-Control': 'no-store' } : CACHE,
+    // No songs means search was refused (quota): don't cache a page without them.
+    headers:
+      isOwner(request) || !songs ? { 'Cache-Control': 'no-store' } : CACHE,
   })
 }
 

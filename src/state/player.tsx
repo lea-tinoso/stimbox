@@ -259,13 +259,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [track.uri])
 
   // Radio: after a song from search, keep adding similar songs before the queue runs out.
-  const [radio, setRadio] = useState<{ seed: string; page: number } | null>(
-    null,
-  )
+  // Radio never runs out, like YouTube Music: after a few pages of songs similar to one song, it
+  // picks a song it just added as the next seed and keeps going. misses = empty answers in a row.
+  const [radio, setRadio] = useState<{
+    seed: string
+    page: number
+    misses?: number
+  } | null>(null)
   const radioBusy = useRef(false)
   useEffect(() => {
     // Keep about 10 songs ahead.
-    if (!radio || radioBusy.current || index < queue.length - 10) return
+    if (
+      !radio ||
+      radioBusy.current ||
+      repeat === 'all' ||
+      index < queue.length - 10
+    )
+      return
     const seed = getTrack(radio.seed)
     if (!seed.uri) return
     radioBusy.current = true
@@ -280,14 +290,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         r.ok ? (r.json() as Promise<{ tracks: OutTrack[] }>) : null,
       )
       .then((d) => {
-        const list = (d?.tracks ?? []).map(toTrack)
+        // Spotify or Last.fm failed (e.g. search quota): try again at the next song.
+        if (!d) return
+        const list = d.tracks.map(toTrack)
         registerTracks(list)
         const fresh = list.map((t) => t.id).filter((id) => !queue.includes(id))
-        if (fresh.length) {
+        if (fresh.length)
           setQueue((q) => [...q, ...fresh.filter((id) => !q.includes(id))])
-          setRadio({ seed: radio.seed, page: radio.page + 1 })
-        } else if (radio.page < 4) setRadio({ ...radio, page: radio.page + 1 })
-        else setRadio(null)
+        const misses = fresh.length ? 0 : (radio.misses ?? 0) + 1
+        if (misses >= 6) return setRadio(null)
+        if (radio.page < 4)
+          return setRadio({ ...radio, page: radio.page + 1, misses })
+        // This seed is used up: carry on from a song from this batch, or from the queue.
+        const pool = fresh.length
+          ? fresh
+          : queue.filter((id) => id !== radio.seed)
+        const next = pool[Math.floor(Math.random() * pool.length)]
+        setRadio(next ? { seed: next, page: 0, misses } : null)
       })
       .catch(() => {})
       .finally(() => {
@@ -297,7 +316,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       ctl.abort()
       radioBusy.current = false
     }
-  }, [radio, index, queue])
+  }, [radio, index, queue, repeat])
 
   const playRadio = useCallback((id: string) => {
     setQueue([id])
@@ -309,7 +328,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const playQueue = useCallback((ids: string[], start = 0) => {
-    setRadio(null)
+    // When a playlist or album ends, keep going with songs like its last one.
+    setRadio(ids.length ? { seed: ids[ids.length - 1], page: 0 } : null)
     setQueue(ids)
     setIndex(start)
     setPosition(0)
