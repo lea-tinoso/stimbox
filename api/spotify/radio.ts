@@ -1,5 +1,5 @@
 import { lastfm, find } from '../_lastfm.js'
-import { CACHE, configured, json } from '../_spotify.js'
+import { configured, json, LONG_CACHE, NO_STORE } from '../_spotify.js'
 import type { OutTrack } from '../../src/data/spotify-types.ts'
 import { present, toOut } from '../_tracks.js'
 
@@ -18,12 +18,12 @@ export async function GET(request: Request) {
   if (!track || !artist)
     return json({ error: 'need track and artist' }, { status: 400 })
 
-  // Similar songs from Last.fm, 15 per page.
+  // Similar songs from Last.fm, 10 per page (each one costs a Spotify search).
   const similar = await lastfm<{ similartracks?: { track?: Similar[] } }>({
     method: 'track.getsimilar',
     track,
     artist,
-    limit: '75',
+    limit: '50',
   })
   const picks = (similar?.similartracks?.track ?? []).slice(
     page * 15,
@@ -40,9 +40,9 @@ export async function GET(request: Request) {
   )
 
   // Niche songs often have few similar songs on Last.fm, so mix in a few songs each from
-  // similar artists, 5 artists per page.
+  // similar artists, 3 artists per page.
   let fromArtists: OutTrack[] = []
-  if (fromSimilar.length < 12) {
+  if (fromSimilar.length < 8) {
     const like = await lastfm<{
       similarartists?: { artist?: { name: string }[] }
     }>({
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       limit: '25',
     })
     const names = (like?.similarartists?.artist ?? [])
-      .slice(page * 5, page * 5 + 5)
+      .slice(page * 3, page * 3 + 3)
       .map((a) => a.name)
     const lists = await Promise.all(
       names.map((n) =>
@@ -86,5 +86,8 @@ export async function GET(request: Request) {
   own.forEach(push)
   const source =
     fromSimilar.length || fromArtists.length ? 'lastfm' : 'artist only'
-  return json({ tracks: found, source }, { headers: CACHE })
+  return json(
+    { tracks: found, source },
+    { headers: found.length ? LONG_CACHE : NO_STORE },
+  )
 }

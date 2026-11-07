@@ -1,5 +1,5 @@
 import type { OutResult } from '../../src/data/spotify-types.ts'
-import { CACHE, configured, json, spotify } from '../_spotify.js'
+import { LONG_CACHE, configured, json, NO_STORE, spotify } from '../_spotify.js'
 import {
   pick,
   present,
@@ -36,16 +36,8 @@ export async function GET(request: Request) {
   if (!res)
     return json(
       { ...empty, error: 'spotify unavailable, try again' },
-      { status: 502, headers: { 'Cache-Control': 'no-store' } },
+      { status: 502, headers: NO_STORE },
     )
-  // New apps get 10 per call, so fetch two more pages of songs.
-  const more = await Promise.all(
-    [10, 20].map((offset) =>
-      spotify<{ tracks?: Paged<SpotifyTrack | null> }>(
-        `/search?type=track&limit=10&offset=${offset}&q=${encodeURIComponent(q)}`,
-      ),
-    ),
-  )
   const results = (
     kind: OutResult['kind'],
     list: (Named | null)[] = [],
@@ -60,11 +52,7 @@ export async function GET(request: Request) {
     }))
   return json(
     {
-      tracks: present(
-        [res, ...more]
-          .flatMap((r) => r?.tracks?.items ?? [])
-          .map((t) => toOut(t)),
-      ).filter((t, i, all) => all.findIndex((x) => x.id === t.id) === i),
+      tracks: present((res.tracks?.items ?? []).map((t) => toOut(t))),
       playlists: results('playlist', res.playlists?.items, (n) =>
         n.owner?.display_name
           ? `playlist · ${n.owner.display_name}`
@@ -77,6 +65,6 @@ export async function GET(request: Request) {
       ),
       artists: results('artist', res.artists?.items, () => 'artist'),
     },
-    { headers: CACHE },
+    { headers: LONG_CACHE },
   )
 }

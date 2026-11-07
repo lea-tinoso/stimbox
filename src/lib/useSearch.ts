@@ -18,7 +18,8 @@ export function useSearch(q: string) {
   const { source, recentCollections, forYouPlaylists } = useCatalog()
   const [found, setFound] = useState<Found>({ q: '', ...none })
   useEffect(() => {
-    if (source !== 'spotify' || !q) return
+    // Each search spends Spotify's small search quota, so wait for 2+ letters and a real pause.
+    if (source !== 'spotify' || q.trim().length < 2) return
     const ctl = new AbortController()
     const id = window.setTimeout(() => {
       fetch(`/api/spotify/search?q=${encodeURIComponent(q)}`, {
@@ -38,7 +39,7 @@ export function useSearch(q: string) {
           })
         })
         .catch(() => {})
-    }, 300)
+    }, 700)
     return () => {
       ctl.abort()
       window.clearTimeout(id)
