@@ -90,7 +90,10 @@ export async function spotify<T>(path: string): Promise<T | null> {
       headers: { Authorization: `Bearer ${await accessToken()}` },
     })
     if (!res.ok) {
-      console.warn(`spotify ${path} → ${res.status}`)
+      console.warn(
+        `spotify ${path} → ${res.status}`,
+        res.headers.get('retry-after') ?? '',
+      )
       return null
     }
     return (await res.json()) as T
